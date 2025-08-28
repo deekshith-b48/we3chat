@@ -121,30 +121,35 @@ export function useWallet(): WalletState {
   const fetchFriends = async (userAddress: string) => {
     try {
       const contract = getContract();
-      const friendAddresses = await contract.getFriends(userAddress);
-      
-      // Fetch details for each friend
+      let friendAddresses: string[] = [];
+      try {
+        friendAddresses = await contract.getFriends(userAddress);
+      } catch (e) {
+        friendAddresses = [];
+      }
+
       const friends = await Promise.all(
         friendAddresses.map(async (friendAddress: string) => {
-          const [username, publicKey] = await Promise.all([
-            contract.usernames(friendAddress),
-            contract.x25519PublicKey(friendAddress)
-          ]);
-          
+          let username = '';
+          let publicKey = '';
+          try {
+            username = await contract.usernames(friendAddress);
+          } catch {}
+          try {
+            publicKey = await contract.x25519PublicKey(friendAddress);
+          } catch {}
+
           return {
             address: friendAddress,
             username: username || friendAddress.slice(0, 8) + '...',
             publicKey: publicKey || '',
-            isOnline: false // We'll implement presence later
+            isOnline: false,
           };
         })
       );
-      
+
       useChatStore.getState().setFriends(friends);
-      
-    } catch (err) {
-      console.error('Error fetching friends:', err);
-    }
+    } catch {}
   };
 
   const clearUserData = () => {
