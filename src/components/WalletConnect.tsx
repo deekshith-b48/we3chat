@@ -6,8 +6,26 @@ import { useAuth } from '@/hooks/use-auth';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 export default function WalletConnect() {
-  const { signIn, isLoading, error } = useAuth();
+  const { signIn, isLoading, error, signInWithEmail, signUpWithEmail } = useAuth();
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [emailMode, setEmailMode] = useState<'signin' | 'signup'>('signin');
+
+  const handleEmailAuth = async () => {
+    setIsSigningIn(true);
+    try {
+      if (emailMode === 'signin') {
+        await signInWithEmail(email, password);
+      } else {
+        await signUpWithEmail(email, password);
+      }
+    } catch (error) {
+      console.error('Email auth failed:', error);
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
 
   const handleSignIn = async () => {
     setIsSigningIn(true);
