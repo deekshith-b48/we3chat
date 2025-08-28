@@ -5,7 +5,12 @@ import { WagmiConfig, createConfig, configureChains } from 'wagmi';
 import { polygonMumbai, polygon } from 'wagmi/chains';
 import { publicProvider } from 'wagmi/providers/public';
 import { alchemyProvider } from 'wagmi/providers/alchemy';
-import { RainbowKitProvider, getDefaultWallets, Chain } from '@rainbow-me/rainbowkit';
+import { RainbowKitProvider, connectorsForWallets, Chain } from '@rainbow-me/rainbowkit';
+import {
+  injectedWallet,
+  metaMaskWallet,
+  walletConnectWallet,
+} from '@rainbow-me/rainbowkit/wallets';
 import '@rainbow-me/rainbowkit/styles.css';
 
 // Custom Polygon Amoy testnet configuration
@@ -36,11 +41,22 @@ const { chains, publicClient, webSocketPublicClient } = configureChains(
   ]
 );
 
-const { connectors } = getDefaultWallets({
-  appName: 'we3chat',
-  projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'demo',
-  chains,
-});
+const connectors = connectorsForWallets([
+  {
+    groupName: 'Recommended',
+    wallets: [
+      injectedWallet({ chains }),
+      metaMaskWallet({
+        projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'demo',
+        chains
+      }),
+      walletConnectWallet({
+        projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'demo',
+        chains
+      }),
+    ],
+  },
+]);
 
 const wagmiConfig = createConfig({
   autoConnect: false, // Disable autoConnect to prevent modal conflicts
