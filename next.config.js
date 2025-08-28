@@ -2,6 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  allowedDevOrigins: [
+    '0b46fa6de6db4547a21f77d0286aaede-7046564e85f548218a385f804.fly.dev',
+    '0b46fa6de6db4547a21f77d0286aaede-7046564e85f548218a385f804.projects.builder.codes'
+  ],
   webpack: (config) => {
     config.resolve.fallback = {
       ...config.resolve.fallback,
