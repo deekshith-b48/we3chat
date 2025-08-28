@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { getContract, getSigner, waitForTransaction, formatContractError } from '@/lib/ethers-helpers';
 import { useChatStore } from '@/store/chat-store';
@@ -102,13 +103,16 @@ export function useAddFriend() {
       
       // Check if already friends
       const userAddress = await signer.getAddress();
-      const isFriend = await contract.isMutualFriend(userAddress, friendAddress);
+      const isFriend = (contract as any).areFriends
+        ? await (contract as any).areFriends(userAddress, friendAddress)
+        : await (contract as any).isMutualFriend(userAddress, friendAddress);
       if (isFriend) {
         throw new Error('Already friends with this user');
       }
       
-      // Send transaction
-      const tx = await contract.addFriend(friendAddress);
+      const nameParam = friendUsername || `${friendAddress.slice(0, 6)}...`;
+      // Send transaction (new ABI requires name)
+      const tx = await (contract as any).addFriend(friendAddress, nameParam);
       
       // Track transaction
       addTransaction({
@@ -129,7 +133,9 @@ export function useAddFriend() {
       
       if (receipt.status === 1) {
         // Get friend's public key
-        const friendPublicKey = await contract.x25519PublicKey(friendAddress);
+        const friendPublicKey = (contract as any).getEncryptionKey
+          ? await (contract as any).getEncryptionKey(friendAddress)
+          : await contract.x25519PublicKey(friendAddress);
         
         // Add to friends list
         addFriend({
@@ -242,7 +248,9 @@ export function useUserInfo(address: string | null) {
         
         const [username, publicKey] = await Promise.all([
           contract.usernames(address),
-          contract.x25519PublicKey(address)
+          (contract as any).getEncryptionKey
+            ? (contract as any).getEncryptionKey(address)
+            : contract.x25519PublicKey(address)
         ]);
         
         const isRegistered = username && publicKey !== '0x0000000000000000000000000000000000000000000000000000000000000000';
@@ -284,7 +292,9 @@ export function useMutualFriendship(address1: string | null, address2: string | 
 
       try {
         const contract = getContract();
-        const result = await contract.isMutualFriend(address1, address2);
+        const result = (contract as any).areFriends
+          ? await (contract as any).areFriends(address1, address2)
+          : await (contract as any).isMutualFriend(address1, address2);
         setIsMutualFriend(result);
       } catch (err) {
         setError(formatContractError(err));
