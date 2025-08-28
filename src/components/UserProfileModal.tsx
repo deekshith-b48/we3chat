@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useChatStore } from '@/store/chat-store';
 import { useWallet } from '@/hooks/use-wallet';
 import { clearStoredKeyPair, getPublicKeyHex, testCrypto } from '@/lib/crypto';

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAddFriend } from '@/hooks/use-contract';
 import { useUserInfo } from '@/hooks/use-contract';
 import { ethers } from 'ethers';
@@ -54,7 +54,7 @@ export default function AddFriendModal({ isOpen, onClose }: AddFriendModalProps)
   };
 
   // Update search step when user info is loaded
-  React.useEffect(() => {
+  useEffect(() => {
     if (searchStep === 'searching' && !isSearching) {
       if (userInfo?.isRegistered) {
         setSearchStep('found');
