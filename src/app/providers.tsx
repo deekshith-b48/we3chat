@@ -92,6 +92,16 @@ export function Providers({ children }: ProvidersProps) {
               selectedOptionBorder: 'rgba(60, 66, 66, 0.1)',
               standby: '#FFD641',
             },
+            radii: {
+              actionButton: '12px',
+              connectButton: '12px',
+              menuButton: '12px',
+              modal: '24px',
+              modalMobile: '28px',
+            },
+            fonts: {
+              body: 'Inter, system-ui, sans-serif',
+            },
           },
           darkMode: {
             colors: {
@@ -125,6 +135,16 @@ export function Providers({ children }: ProvidersProps) {
               profileForeground: 'rgba(224, 232, 255, 0.06)',
               selectedOptionBorder: 'rgba(224, 232, 255, 0.1)',
               standby: '#FFD641',
+            },
+            radii: {
+              actionButton: '12px',
+              connectButton: '12px',
+              menuButton: '12px',
+              modal: '24px',
+              modalMobile: '28px',
+            },
+            fonts: {
+              body: 'Inter, system-ui, sans-serif',
             },
           },
         }}
