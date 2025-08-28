@@ -43,7 +43,7 @@ const { connectors } = getDefaultWallets({
 });
 
 const wagmiConfig = createConfig({
-  autoConnect: true,
+  autoConnect: false, // Disable autoConnect to prevent modal conflicts
   connectors,
   publicClient,
   webSocketPublicClient,
@@ -58,6 +58,8 @@ export function Providers({ children }: ProvidersProps) {
     <WagmiConfig config={wagmiConfig}>
       <RainbowKitProvider
         chains={chains}
+        initialChain={polygonAmoy}
+        modalSize="compact"
         theme={{
           lightMode: {
             colors: {
