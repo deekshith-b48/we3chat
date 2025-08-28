@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { ChatComponent } from './chat';
 
 interface Chat {
   id: string;
@@ -25,7 +26,7 @@ interface User {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, ChatComponent],
   template: `
     <div class="flex h-screen bg-gray-50">
       <!-- Sidebar -->
