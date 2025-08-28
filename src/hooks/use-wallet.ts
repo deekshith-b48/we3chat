@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAccount, useDisconnect, useNetwork, useSwitchNetwork } from 'wagmi';
 import { useChatStore } from '@/store/chat-store';
 import { getOrCreateX25519, getPublicKeyHex, clearStoredKeyPair } from '@/lib/crypto';
