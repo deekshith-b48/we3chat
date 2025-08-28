@@ -3,7 +3,9 @@ import nacl from "tweetnacl";
 // Store keypair in localStorage: { pub: number[], sec: number[] }
 export function getOrCreateX25519(): { publicKey: Uint8Array; secretKey: Uint8Array } {
   if (typeof window === 'undefined') {
-    throw new Error("Crypto operations can only be performed in the browser");
+    // Return a temporary keypair for SSR
+    const kp = nacl.box.keyPair();
+    return { publicKey: kp.publicKey, secretKey: kp.secretKey };
   }
 
   const raw = localStorage.getItem("we3_x25519");
@@ -108,6 +110,9 @@ export function clearStoredKeyPair(): void {
 
 // Get public key as hex string for blockchain storage
 export function getPublicKeyHex(): string {
+  if (typeof window === 'undefined') {
+    return '0x0000000000000000000000000000000000000000000000000000000000000000';
+  }
   const { publicKey } = getOrCreateX25519();
   return toHex0x(publicKey);
 }
