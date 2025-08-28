@@ -36,30 +36,36 @@ const polygonAmoy: Chain = {
 const { chains, publicClient, webSocketPublicClient } = configureChains(
   [polygonAmoy, polygonMumbai, polygon],
   [
-    alchemyProvider({ apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || 'demo' }),
+    alchemyProvider({ apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY ?? '' }),
     publicProvider(),
   ]
 );
 
+const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
+
+const wallets = [
+  injectedWallet({ chains }),
+  ...(projectId
+    ? [
+        metaMaskWallet({ projectId, chains }),
+        walletConnectWallet({
+          projectId,
+          chains,
+          qrModalOptions: { enableExplorer: false },
+        }),
+      ]
+    : []),
+];
+
 const connectors = connectorsForWallets([
   {
     groupName: 'Recommended',
-    wallets: [
-      injectedWallet({ chains }),
-      metaMaskWallet({
-        projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'demo',
-        chains
-      }),
-      walletConnectWallet({
-        projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'demo',
-        chains
-      }),
-    ],
+    wallets,
   },
 ]);
 
 const wagmiConfig = createConfig({
-  autoConnect: false, // Disable autoConnect to prevent modal conflicts
+  autoConnect: false,
   connectors,
   publicClient,
   webSocketPublicClient,
