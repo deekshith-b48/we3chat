@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { WagmiConfig, createConfig, configureChains } from 'wagmi';
 import { polygonMumbai, polygon } from 'wagmi/chains';
 import { publicProvider } from 'wagmi/providers/public';
@@ -54,12 +54,26 @@ interface ProvidersProps {
 }
 
 export function Providers({ children }: ProvidersProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
   return (
     <WagmiConfig config={wagmiConfig}>
       <RainbowKitProvider
         chains={chains}
         initialChain={polygonAmoy}
         modalSize="compact"
+        appInfo={{
+          appName: 'we3chat',
+          learnMoreUrl: 'https://we3chat.app',
+        }}
         theme={{
           lightMode: {
             colors: {
