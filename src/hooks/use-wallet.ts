@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useAccount, useConnect, useDisconnect, useNetwork, useSwitchNetwork } from 'wagmi';
+import { useAccount, useDisconnect, useNetwork, useSwitchNetwork } from 'wagmi';
 import { useChatStore } from '@/store/chat-store';
 import { getOrCreateX25519, getPublicKeyHex, clearStoredKeyPair } from '@/lib/crypto';
 import { getContract, getSigner } from '@/lib/ethers-helpers';
@@ -18,7 +18,7 @@ export interface WalletState {
 
 export function useWallet(): WalletState {
   const { address, isConnected: wagmiConnected } = useAccount();
-  const { connect: wagmiConnect, connectors, isLoading: isConnecting } = useConnect();
+  const [isConnecting, setIsConnecting] = useState(false);
   const { disconnect: wagmiDisconnect } = useDisconnect();
   const { chain } = useNetwork();
   const { switchNetwork } = useSwitchNetwork();
