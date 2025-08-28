@@ -90,16 +90,6 @@ export function Providers({ children }: ProvidersProps) {
           appName: 'we3chat',
           learnMoreUrl: 'https://we3chat.app',
         }}
-        theme={{
-          lightMode: {
-            accentColor: '#3b82f6',
-            accentColorForeground: 'white',
-          },
-          darkMode: {
-            accentColor: '#3b82f6',
-            accentColorForeground: 'white',
-          },
-        }}
       >
         {children}
       </RainbowKitProvider>
