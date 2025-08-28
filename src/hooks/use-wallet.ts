@@ -72,38 +72,49 @@ export function useWallet(): WalletState {
   };
 
   const fetchUserData = async (userAddress: string) => {
+    // If contract address is a placeholder or missing, treat as unregistered and skip on-chain calls
+    const isPlaceholder = /^0x1234567890123456789012345678901234567890$/i.test(CHAT_ADDRESS);
+    if (isPlaceholder) {
+      setUser({ address: userAddress, username: '', publicKey: '', isRegistered: false });
+      return;
+    }
+
     try {
       const contract = getContract();
-      
-      // Fetch username and public key from contract
-      const [username, onChainPublicKey] = await Promise.all([
-        contract.usernames(userAddress),
-        contract.x25519PublicKey(userAddress)
-      ]);
-      
-      const isRegistered = username && onChainPublicKey !== '0x0000000000000000000000000000000000000000000000000000000000000000';
-      
+
+      // Fetch username safely
+      let username: string = '';
+      try {
+        username = await contract.usernames(userAddress);
+      } catch (e) {
+        // Ignore CALL_EXCEPTION and treat as empty username
+        username = '';
+      }
+
+      // Fetch public key safely
+      let onChainPublicKey: string = '';
+      try {
+        onChainPublicKey = await contract.x25519PublicKey(userAddress);
+      } catch (e) {
+        onChainPublicKey = '0x';
+      }
+
+      const zeroKey = '0x0000000000000000000000000000000000000000000000000000000000000000';
+      const isRegistered = !!username && onChainPublicKey && onChainPublicKey !== zeroKey;
+
       setUser({
         address: userAddress,
-        username: username || '',
+        username,
         publicKey: onChainPublicKey || '',
-        isRegistered
+        isRegistered,
       });
-      
-      // If user is registered, fetch friends
+
       if (isRegistered) {
         await fetchFriends(userAddress);
       }
-      
     } catch (err) {
-      console.error('Error fetching user data:', err);
-      // User might not be registered yet, which is fine
-      setUser({
-        address: userAddress,
-        username: '',
-        publicKey: '',
-        isRegistered: false
-      });
+      // Failsafe: don't spam console with contract errors; degrade gracefully
+      setUser({ address: userAddress, username: '', publicKey: '', isRegistered: false });
     }
   };
 
