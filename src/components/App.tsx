@@ -8,6 +8,7 @@ import AccountSetup from '@/components/AccountSetup';
 import NetworkSwitcher from '@/components/NetworkSwitcher';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import TransactionNotifications from '@/components/TransactionNotifications';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { useWallet, useWalletStatus } from '@/hooks/use-wallet';
 import { useChatStore } from '@/store/chat-store';
 
@@ -51,9 +52,9 @@ export default function App() {
 
   // Show main dashboard when everything is ready
   return (
-    <>
+    <ErrorBoundary>
       <Dashboard />
       <TransactionNotifications />
-    </>
+    </ErrorBoundary>
   );
 }
