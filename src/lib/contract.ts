@@ -1,6 +1,6 @@
 import ChatABI from "@/lib/abi/ChatApp.json";
 
-export const CHAT_ADDRESS = (process.env.NEXT_PUBLIC_CHAT_ADDRESS || "0x1234567890123456789012345678901234567890") as `0x${string}`;
+export const CHAT_ADDRESS = (process.env.NEXT_PUBLIC_CHAT_ADDRESS || "0xd9145CCE52D386f254917e481eB44e9943F39138") as `0x${string}`;
 export const CHAT_ABI = ChatABI;
 
 // Network configuration
@@ -13,9 +13,9 @@ export const NETWORK_CONFIG = {
 
 // Contract addresses for different networks
 export const CONTRACT_ADDRESSES = {
-  80002: "0x1234567890123456789012345678901234567890", // Polygon Amoy
-  137: "0x1234567890123456789012345678901234567890",   // Polygon Mainnet
-  80001: "0x1234567890123456789012345678901234567890", // Polygon Mumbai (deprecated)
+  80002: "0xd9145CCE52D386f254917e481eB44e9943F39138", // Polygon Amoy
+  137: "0xd9145CCE52D386f254917e481eB44e9943F39138",   // Polygon Mainnet (placeholder same)
+  80001: "0xd9145CCE52D386f254917e481eB44e9943F39138", // Polygon Mumbai (deprecated)
 } as const;
 
 export function getContractAddress(chainId: number): `0x${string}` {
