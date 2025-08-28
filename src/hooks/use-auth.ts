@@ -3,6 +3,7 @@ import { useAccount, useSignMessage } from 'wagmi';
 import { SiweMessage } from 'siwe';
 import { api, connectSocket, disconnectSocket, type User } from '@/lib/api';
 import { useChatStore } from '@/store/chat-store';
+import { supabase } from '@/lib/supabase';
 
 export interface AuthState {
   isAuthenticated: boolean;
