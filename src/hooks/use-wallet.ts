@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useAccount, useConnect, useDisconnect, useNetwork, useSwitchNetwork } from 'wagmi';
+import { useAccount, useDisconnect, useNetwork, useSwitchNetwork } from 'wagmi';
 import { useChatStore } from '@/store/chat-store';
 import { getOrCreateX25519, getPublicKeyHex, clearStoredKeyPair } from '@/lib/crypto';
 import { getContract, getSigner } from '@/lib/ethers-helpers';
+import { CHAT_ADDRESS } from '@/lib/contract';
 
 export interface WalletState {
   isConnected: boolean;
@@ -18,7 +19,7 @@ export interface WalletState {
 
 export function useWallet(): WalletState {
   const { address, isConnected: wagmiConnected } = useAccount();
-  const { connect: wagmiConnect, connectors, isLoading: isConnecting } = useConnect();
+  const [isConnecting, setIsConnecting] = useState(false);
   const { disconnect: wagmiDisconnect } = useDisconnect();
   const { chain } = useNetwork();
   const { switchNetwork } = useSwitchNetwork();
@@ -71,68 +72,90 @@ export function useWallet(): WalletState {
   };
 
   const fetchUserData = async (userAddress: string) => {
+    // If contract address is a placeholder or missing, treat as unregistered and skip on-chain calls
+    const isPlaceholder = /^0x1234567890123456789012345678901234567890$/i.test(CHAT_ADDRESS);
+    if (isPlaceholder) {
+      setUser({ address: userAddress, username: '', publicKey: '', isRegistered: false });
+      return;
+    }
+
     try {
       const contract = getContract();
-      
-      // Fetch username and public key from contract
-      const [username, onChainPublicKey] = await Promise.all([
-        contract.usernames(userAddress),
-        contract.x25519PublicKey(userAddress)
-      ]);
-      
-      const isRegistered = username && onChainPublicKey !== '0x0000000000000000000000000000000000000000000000000000000000000000';
-      
+
+      // Fetch username safely
+      let username: string = '';
+      try {
+        username = await contract.usernames(userAddress);
+      } catch (e) {
+        // Ignore CALL_EXCEPTION and treat as empty username
+        username = '';
+      }
+
+      // Fetch public key safely
+      let onChainPublicKey: string = '';
+      try {
+        if ((contract as any).getEncryptionKey) {
+          onChainPublicKey = await (contract as any).getEncryptionKey(userAddress);
+        } else {
+          onChainPublicKey = await contract.x25519PublicKey(userAddress);
+        }
+      } catch (e) {
+        onChainPublicKey = '0x';
+      }
+
+      const zeroKey = '0x0000000000000000000000000000000000000000000000000000000000000000';
+      const isRegistered = !!username && onChainPublicKey && onChainPublicKey !== zeroKey;
+
       setUser({
         address: userAddress,
-        username: username || '',
+        username,
         publicKey: onChainPublicKey || '',
-        isRegistered
+        isRegistered,
       });
-      
-      // If user is registered, fetch friends
+
       if (isRegistered) {
         await fetchFriends(userAddress);
       }
-      
     } catch (err) {
-      console.error('Error fetching user data:', err);
-      // User might not be registered yet, which is fine
-      setUser({
-        address: userAddress,
-        username: '',
-        publicKey: '',
-        isRegistered: false
-      });
+      // Failsafe: don't spam console with contract errors; degrade gracefully
+      setUser({ address: userAddress, username: '', publicKey: '', isRegistered: false });
     }
   };
 
-  const fetchFriends = async (userAddress: string) => {
+  const fetchFriends = async (_userAddress: string) => {
     try {
       const contract = getContract();
-      const friendAddresses = await contract.getFriends(userAddress);
-      
-      // Fetch details for each friend
+      let friendList: Array<{ friendAddress: string; name: string; addedAt: string | number }>;
+      try {
+        friendList = await (contract as any).getFriends();
+      } catch (e) {
+        friendList = [] as any;
+      }
+
       const friends = await Promise.all(
-        friendAddresses.map(async (friendAddress: string) => {
-          const [username, publicKey] = await Promise.all([
-            contract.usernames(friendAddress),
-            contract.x25519PublicKey(friendAddress)
-          ]);
-          
+        (friendList || []).map(async (f: any) => {
+          const friendAddress: string = f.friendAddress || f[0];
+          const name: string = f.name || f[1] || '';
+          let publicKey = '';
+          try {
+            if ((contract as any).getEncryptionKey) {
+              publicKey = await (contract as any).getEncryptionKey(friendAddress);
+            } else {
+              publicKey = await contract.x25519PublicKey(friendAddress);
+            }
+          } catch {}
+
           return {
             address: friendAddress,
-            username: username || friendAddress.slice(0, 8) + '...',
+            username: name || friendAddress.slice(0, 8) + '...',
             publicKey: publicKey || '',
-            isOnline: false // We'll implement presence later
+            isOnline: false,
           };
         })
       );
-      
+
       useChatStore.getState().setFriends(friends);
-      
-    } catch (err) {
-      console.error('Error fetching friends:', err);
-    }
+    } catch {}
   };
 
   const clearUserData = () => {
@@ -143,15 +166,9 @@ export function useWallet(): WalletState {
   };
 
   const connect = async () => {
-    try {
-      setError(null);
-      const connector = connectors[0]; // Use first available connector (MetaMask, etc.)
-      if (connector) {
-        wagmiConnect({ connector });
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to connect wallet');
-    }
+    // Note: Connection is handled by RainbowKit ConnectButton to prevent conflicts
+    // This function is kept for interface compatibility but does nothing
+    setError(null);
   };
 
   const disconnect = async () => {

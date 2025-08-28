@@ -1,11 +1,16 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { WagmiConfig, createConfig, configureChains } from 'wagmi';
 import { polygonMumbai, polygon } from 'wagmi/chains';
 import { publicProvider } from 'wagmi/providers/public';
 import { alchemyProvider } from 'wagmi/providers/alchemy';
-import { RainbowKitProvider, getDefaultWallets, Chain } from '@rainbow-me/rainbowkit';
+import { RainbowKitProvider, connectorsForWallets, Chain } from '@rainbow-me/rainbowkit';
+import {
+  injectedWallet,
+  metaMaskWallet,
+  walletConnectWallet,
+} from '@rainbow-me/rainbowkit/wallets';
 import '@rainbow-me/rainbowkit/styles.css';
 
 // Custom Polygon Amoy testnet configuration
@@ -31,19 +36,38 @@ const polygonAmoy: Chain = {
 const { chains, publicClient, webSocketPublicClient } = configureChains(
   [polygonAmoy, polygonMumbai, polygon],
   [
-    alchemyProvider({ apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY || 'demo' }),
+    ...(process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
+      ? [alchemyProvider({ apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY as string })]
+      : []),
     publicProvider(),
   ]
 );
 
-const { connectors } = getDefaultWallets({
-  appName: 'we3chat',
-  projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'demo',
-  chains,
-});
+const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID;
+
+const wallets = [
+  injectedWallet({ chains }),
+  ...(projectId
+    ? [
+        metaMaskWallet({ projectId, chains }),
+        walletConnectWallet({
+          projectId,
+          chains,
+          qrModalOptions: { enableExplorer: false },
+        }),
+      ]
+    : []),
+];
+
+const connectors = connectorsForWallets([
+  {
+    groupName: 'Recommended',
+    wallets,
+  },
+]);
 
 const wagmiConfig = createConfig({
-  autoConnect: true,
+  autoConnect: false,
   connectors,
   publicClient,
   webSocketPublicClient,
@@ -54,23 +78,25 @@ interface ProvidersProps {
 }
 
 export function Providers({ children }: ProvidersProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
   return (
     <WagmiConfig config={wagmiConfig}>
-      <RainbowKitProvider 
+      <RainbowKitProvider
         chains={chains}
-        theme={{
-          lightMode: {
-            colors: {
-              accentColor: '#3b82f6',
-              accentColorForeground: 'white',
-            },
-          },
-          darkMode: {
-            colors: {
-              accentColor: '#3b82f6',
-              accentColorForeground: 'white',
-            },
-          },
+        initialChain={polygonAmoy}
+        modalSize="compact"
+        appInfo={{
+          appName: 'we3chat',
+          learnMoreUrl: 'https://we3chat.app',
         }}
       >
         {children}

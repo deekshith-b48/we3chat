@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { ethers } from 'ethers';
-import { getContract, getSigner, waitForTransaction, formatContractError } from '@/lib/ethers-helpers';
-import { uploadJSON, fetchJSONFromCID } from '@/lib/ipfs';
-import { encryptForRecipient, decryptFromSender, getOrCreateX25519, fromHex0x } from '@/lib/crypto';
+import { api, type Message as ApiMessage } from '@/lib/api';
 import { useChatStore, generateMessageId, Message } from '@/store/chat-store';
+import { useAuth } from '@/hooks/use-auth';
+import { useRealTimeMessaging } from '@/hooks/use-real-time';
 
 export interface SendMessageState {
   isLoading: boolean;
@@ -11,7 +10,7 @@ export interface SendMessageState {
   progress: 'idle' | 'encrypting' | 'uploading' | 'sending' | 'confirming' | 'complete';
 }
 
-// Hook for sending encrypted messages
+// Hook for sending messages via API
 export function useSendMessage() {
   const [state, setState] = useState<SendMessageState>({
     isLoading: false,
@@ -19,111 +18,155 @@ export function useSendMessage() {
     progress: 'idle'
   });
 
-  const { addMessage, updateMessage, addTransaction, updateTransaction } = useChatStore();
+  const { user } = useAuth();
+  const { addMessage, updateMessage } = useChatStore();
+  const { sendMessageViaSocket } = useRealTimeMessaging();
 
-  const sendMessage = async (friendAddress: string, friendPublicKey: string, plaintext: string): Promise<boolean> => {
-    setState({ isLoading: true, error: null, progress: 'encrypting' });
+  const sendMessage = async (
+    friendAddress: string, 
+    friendPublicKey: string, 
+    plaintext: string,
+    useBlockchain = false // Option to use blockchain + IPFS or just API
+  ): Promise<boolean> => {
+    setState({ isLoading: true, error: null, progress: 'sending' });
 
     try {
-      const signer = getSigner();
-      const myAddress = await signer.getAddress();
-      
-      // 1) Get local keypair
-      const { publicKey: myPub, secretKey: mySec } = getOrCreateX25519();
-      
-      // 2) Convert friend's public key from hex to Uint8Array
-      const recipPub = fromHex0x(friendPublicKey);
-      
-      // 3) Encrypt the message
-      const encrypted = await encryptForRecipient(plaintext, mySec, recipPub);
-      const timestamp = Date.now();
-      
-      const payload = {
-        v: 1,
-        ciphertext: encrypted.ciphertext,
-        iv: encrypted.iv,
-        salt: encrypted.salt,
-        sender: myAddress,
-        receiver: friendAddress,
-        timestamp,
-        message: plaintext // This will help with debugging, but we should remove in production
-      };
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
 
-      setState(prev => ({ ...prev, progress: 'uploading' }));
-      
-      // 4) Upload to IPFS
-      const cid = await uploadJSON(payload);
-      
-      setState(prev => ({ ...prev, progress: 'sending' }));
-      
-      // 5) Compute cidHash for the contract
-      const cidHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(cid));
-      
-      // 6) Create optimistic message
-      const messageId = generateMessageId(myAddress, friendAddress, timestamp);
-      const optimisticMessage: Message = {
-        id: messageId,
-        sender: myAddress,
-        receiver: friendAddress,
-        content: plaintext,
-        timestamp,
-        cidHash,
-        cid,
-        status: 'pending'
-      };
-      
-      addMessage(friendAddress, optimisticMessage);
-      
-      // 7) Send transaction
-      const contract = getContract(signer);
-      const tx = await contract.sendMessage(friendAddress, cidHash, cid);
-      
-      // Track transaction
-      addTransaction({
-        hash: tx.hash,
-        status: 'pending',
-        timestamp: Date.now()
-      });
-      
-      // Update message with transaction hash
-      updateMessage(friendAddress, messageId, { txHash: tx.hash });
-      
-      setState(prev => ({ ...prev, progress: 'confirming' }));
-      
-      // 8) Wait for confirmation
-      const receipt = await waitForTransaction(tx.hash, 1, (receipt) => {
-        if (receipt && receipt.status === 1) {
+      const timestamp = Date.now();
+      const messageId = generateMessageId(user.address, friendAddress, timestamp);
+
+      if (useBlockchain) {
+        // Use the existing blockchain + IPFS flow
+        setState(prev => ({ ...prev, progress: 'encrypting' }));
+        
+        // Import the original crypto functions
+        const { encryptForRecipient, getOrCreateX25519, fromHex0x } = await import('@/lib/crypto');
+        const { uploadJSON } = await import('@/lib/ipfs');
+        const { ethers } = await import('ethers');
+        
+        // 1) Get local keypair
+        const { publicKey: myPub, secretKey: mySec } = getOrCreateX25519();
+        
+        // 2) Convert friend's public key from hex to Uint8Array
+        const recipPub = fromHex0x(friendPublicKey);
+        
+        // 3) Encrypt the message
+        const encrypted = await encryptForRecipient(plaintext, mySec, recipPub);
+        
+        const payload = {
+          v: 1,
+          ciphertext: encrypted.ciphertext,
+          iv: encrypted.iv,
+          salt: encrypted.salt,
+          sender: user.address,
+          receiver: friendAddress,
+          timestamp,
+        };
+
+        setState(prev => ({ ...prev, progress: 'uploading' }));
+        
+        // 4) Upload to IPFS
+        const cid = await uploadJSON(payload);
+        
+        // 5) Compute cidHash for the contract
+        const cidHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(cid));
+        
+        // 6) Create optimistic message
+        const optimisticMessage: Message = {
+          id: messageId,
+          sender: user.address,
+          receiver: friendAddress,
+          content: plaintext,
+          timestamp,
+          cidHash,
+          cid,
+          status: 'pending'
+        };
+        
+        addMessage(friendAddress, optimisticMessage);
+        
+        setState(prev => ({ ...prev, progress: 'confirming' }));
+        
+        // 7) Send transaction
+        const { getContract, getSigner } = await import('@/lib/ethers-helpers');
+        const contract = getContract(getSigner());
+        const tx = await contract.sendMessage(friendAddress, cidHash, cid);
+        
+        // Update message with transaction hash
+        updateMessage(friendAddress, messageId, { txHash: tx.hash });
+        
+        // Wait for confirmation
+        const receipt = await tx.wait();
+        
+        if (receipt.status === 1) {
           updateMessage(friendAddress, messageId, {
             status: 'confirmed',
             blockNumber: receipt.blockNumber
           });
-          
-          updateTransaction(tx.hash, {
-            status: 'confirmed',
-            blockNumber: receipt.blockNumber,
-            gasUsed: receipt.gasUsed?.toString()
-          });
+          setState({ isLoading: false, error: null, progress: 'complete' });
+          return true;
+        } else {
+          throw new Error('Transaction failed');
         }
-      });
-      
-      if (receipt.status === 1) {
+        
+      } else {
+        // Use API-only flow (faster, simpler)
+        
+        // Find or create conversation
+        const conversations = await api.getConversations();
+        let conversationId = conversations.conversations.find(conv => 
+          conv.type === 'direct' && 
+          conv.otherParticipant?.address === friendAddress
+        )?.id;
+
+        if (!conversationId) {
+          // Create new conversation
+          const newConv = await api.createConversation({
+            type: 'direct',
+            participantAddress: friendAddress
+          });
+          conversationId = newConv.conversation.id;
+        }
+
+        // Create optimistic message first
+        const optimisticMessage: Message = {
+          id: messageId,
+          sender: user.address,
+          receiver: friendAddress,
+          content: plaintext,
+          timestamp,
+          cidHash: '',
+          cid: '',
+          status: 'pending'
+        };
+        
+        addMessage(friendAddress, optimisticMessage);
+
+        // Send via socket for real-time delivery
+        const tempId = `temp_${Date.now()}`;
+        sendMessageViaSocket({
+          conversationId,
+          content: plaintext,
+          type: 'text',
+          tempId
+        });
+
         setState({ isLoading: false, error: null, progress: 'complete' });
         return true;
-      } else {
-        throw new Error('Transaction failed');
       }
       
     } catch (err) {
-      const errorMessage = formatContractError(err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to send message';
       setState({ isLoading: false, error: errorMessage, progress: 'idle' });
       
-      // Update any optimistic message to failed status
-      const messageId = generateMessageId(
-        await getSigner().getAddress(), 
-        friendAddress, 
-        Date.now()
-      );
-      updateMessage(friendAddress, messageId, { status: 'failed' });
+      // Update optimistic message to failed status if it exists
+      if (user) {
+        const messageId = generateMessageId(user.address, friendAddress, Date.now());
+        updateMessage(friendAddress, messageId, { status: 'failed' });
+      }
       
       return false;
     }
@@ -138,120 +181,50 @@ export function useLoadConversation(friendAddress: string | null) {
   const [error, setError] = useState<string | null>(null);
   
   const { setConversation } = useChatStore();
+  const { user } = useAuth();
 
   const loadConversation = async () => {
-    if (!friendAddress) return;
+    if (!friendAddress || !user) return;
     
     setIsLoading(true);
     setError(null);
 
     try {
-      const signer = getSigner();
-      const myAddress = await signer.getAddress();
-      const contract = getContract();
-      
-      // 1) Call contract to get message hashes
-      const messages = await contract.readMessage(friendAddress);
-      
-      // 2) Get event logs to map cidHash -> cid
-      const provider = signer.provider!;
-      const iface = new ethers.utils.Interface(contract.interface.format());
-      
-      const filter = {
-        address: contract.address,
-        topics: [ethers.utils.id("MessageSent(address,address,bytes32,uint256,string)")]
-      };
-      
-      const logs = await provider.getLogs({ ...filter, fromBlock: 0, toBlock: "latest" });
-      
-      // Parse logs and create cidHash -> cid mapping
-      const cidMap = new Map<string, string>();
-      for (const log of logs) {
-        try {
-          const parsed = iface.parseLog(log);
-          // parsed.args = [from, to, cidHash, timestamp, cid]
-          const cidHash = (parsed.args[2] as string).toLowerCase();
-          const cid = parsed.args[4] as string;
-          cidMap.set(cidHash, cid);
-        } catch (e) {
-          // Ignore parsing errors
-        }
+      // Get conversations to find the conversation ID
+      const conversations = await api.getConversations();
+      const conversation = conversations.conversations.find(conv => 
+        conv.type === 'direct' && 
+        conv.otherParticipant?.address === friendAddress
+      );
+
+      if (!conversation) {
+        // No conversation exists yet
+        setConversation(friendAddress, []);
+        return;
       }
+
+      // Get messages for this conversation
+      const { messages } = await api.getMessages(conversation.id);
       
-      // 3) For each message, fetch from IPFS and decrypt
-      const { secretKey } = getOrCreateX25519();
-      const decryptedMessages: Message[] = [];
+      // Convert API messages to store format
+      const storeMessages: Message[] = messages.map(msg => ({
+        id: msg.id,
+        sender: msg.sender.address,
+        receiver: msg.sender.address === user.address ? friendAddress : user.address,
+        content: msg.content,
+        timestamp: new Date(msg.createdAt).getTime(),
+        cidHash: msg.cidHash || '',
+        cid: msg.cid || '',
+        txHash: msg.txHash,
+        status: msg.status as 'pending' | 'confirmed' | 'failed',
+        blockNumber: msg.blockNumber,
+        decryptionError: undefined
+      }));
       
-      for (const msg of messages) {
-        const hash = (msg.cidHash as string).toLowerCase();
-        const cid = cidMap.get(hash);
-        
-        if (!cid) continue;
-        
-        try {
-          // Fetch encrypted payload from IPFS
-          const encPayload = await fetchJSONFromCID(cid);
-          
-          // Get sender's public key from contract
-          const senderPubHex = await contract.x25519PublicKey(msg.sender);
-          const senderPub = fromHex0x(senderPubHex);
-          
-          // Decrypt the message
-          const plaintext = await decryptFromSender(
-            encPayload.ciphertext,
-            encPayload.iv,
-            encPayload.salt,
-            secretKey,
-            senderPub
-          );
-          
-          const messageId = generateMessageId(
-            msg.sender,
-            msg.receiver,
-            msg.timestamp.toNumber ? msg.timestamp.toNumber() : msg.timestamp
-          );
-          
-          decryptedMessages.push({
-            id: messageId,
-            sender: msg.sender,
-            receiver: msg.receiver,
-            content: plaintext,
-            timestamp: msg.timestamp.toNumber ? msg.timestamp.toNumber() : msg.timestamp,
-            cidHash: msg.cidHash,
-            cid,
-            status: 'confirmed'
-          });
-          
-        } catch (decryptError) {
-          console.error('Failed to decrypt message:', decryptError);
-          
-          // Add message with decryption error
-          const messageId = generateMessageId(
-            msg.sender,
-            msg.receiver,
-            msg.timestamp.toNumber ? msg.timestamp.toNumber() : msg.timestamp
-          );
-          
-          decryptedMessages.push({
-            id: messageId,
-            sender: msg.sender,
-            receiver: msg.receiver,
-            content: '[Failed to decrypt message]',
-            timestamp: msg.timestamp.toNumber ? msg.timestamp.toNumber() : msg.timestamp,
-            cidHash: msg.cidHash,
-            cid: cid || '',
-            status: 'confirmed',
-            decryptionError: 'Failed to decrypt'
-          });
-        }
-      }
-      
-      // Sort by timestamp and update store
-      const sortedMessages = decryptedMessages.sort((a, b) => a.timestamp - b.timestamp);
-      setConversation(friendAddress, sortedMessages);
+      setConversation(friendAddress, storeMessages);
       
     } catch (err) {
-      const errorMessage = formatContractError(err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load conversation';
       setError(errorMessage);
       console.error('Error loading conversation:', err);
     } finally {
@@ -264,101 +237,101 @@ export function useLoadConversation(friendAddress: string | null) {
     if (friendAddress) {
       loadConversation();
     }
-  }, [friendAddress]);
+  }, [friendAddress, user?.address]);
 
   return { isLoading, error, loadConversation };
 }
 
-// Hook for real-time message updates
-export function useMessageEvents() {
-  const { addMessage, updateMessage } = useChatStore();
+// Hook for loading friends from API
+export function useLoadFriends() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
-  useEffect(() => {
-    let provider: ethers.providers.Web3Provider;
-    let contract: ethers.Contract;
+  const { setFriends } = useChatStore();
+  const { user } = useAuth();
+
+  const loadFriends = async () => {
+    if (!user) return;
     
-    const setupEventListener = async () => {
-      try {
-        provider = new ethers.providers.Web3Provider(window.ethereum);
-        contract = getContract(provider);
-        
-        const filter = contract.filters.MessageSent();
-        
-        const handleMessageSent = async (
-          from: string,
-          to: string,
-          cidHash: string,
-          timestamp: ethers.BigNumber,
-          cid: string,
-          event: ethers.Event
-        ) => {
-          try {
-            const myAddress = await getSigner().getAddress();
-            
-            // Only process messages involving current user
-            if (from !== myAddress && to !== myAddress) return;
-            
-            const friendAddress = from === myAddress ? to : from;
-            
-            // Fetch and decrypt the message
-            const encPayload = await fetchJSONFromCID(cid);
-            const { secretKey } = getOrCreateX25519();
-            
-            // Get sender's public key
-            const senderPubHex = await contract.x25519PublicKey(from);
-            const senderPub = fromHex0x(senderPubHex);
-            
-            const plaintext = await decryptFromSender(
-              encPayload.ciphertext,
-              encPayload.iv,
-              encPayload.salt,
-              secretKey,
-              senderPub
-            );
-            
-            const messageId = generateMessageId(from, to, timestamp.toNumber());
-            
-            const message: Message = {
-              id: messageId,
-              sender: from,
-              receiver: to,
-              content: plaintext,
-              timestamp: timestamp.toNumber(),
-              cidHash,
-              cid,
-              status: 'confirmed',
-              txHash: event.transactionHash,
-              blockNumber: event.blockNumber
-            };
-            
-            addMessage(friendAddress, message);
-            
-          } catch (error) {
-            console.error('Error processing MessageSent event:', error);
-          }
-        };
-        
-        contract.on(filter, handleMessageSent);
-        
-        return () => {
-          if (contract) {
-            contract.removeAllListeners();
-          }
-        };
-        
-      } catch (error) {
-        console.error('Error setting up message event listener:', error);
-      }
-    };
-    
-    if (typeof window !== 'undefined' && window.ethereum) {
-      setupEventListener();
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { friends } = await api.getFriends();
+      
+      // Convert API friends to store format
+      const storeFriends = friends.map(friend => ({
+        address: friend.address,
+        username: friend.username || friend.address.slice(0, 8) + '...',
+        publicKey: friend.publicKey || '',
+        isOnline: false, // Will be updated by presence system
+        lastSeen: friend.lastSeen ? new Date(friend.lastSeen).getTime() : undefined
+      }));
+      
+      setFriends(storeFriends);
+      
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load friends';
+      setError(errorMessage);
+      console.error('Error loading friends:', err);
+    } finally {
+      setIsLoading(false);
     }
-    
-    return () => {
-      if (contract) {
-        contract.removeAllListeners();
-      }
-    };
-  }, []);
+  };
+
+  // Load friends when user changes
+  useEffect(() => {
+    if (user) {
+      loadFriends();
+    }
+  }, [user?.address]);
+
+  return { isLoading, error, loadFriends };
+}
+
+// Hook for adding friends
+export function useAddFriend() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const { loadFriends } = useLoadFriends();
+
+  const addFriend = async (address: string): Promise<boolean> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      await api.sendFriendRequest(address);
+      
+      // Reload friends list
+      await loadFriends();
+      
+      return true;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to add friend';
+      setError(errorMessage);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return { isLoading, error, addFriend };
+}
+
+// Initialize real-time messaging when component mounts
+export function useMessageEvents() {
+  const { isAuthenticated } = useAuth();
+  const realTime = useRealTimeMessaging();
+  const { loadFriends } = useLoadFriends();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Load initial data
+      loadFriends();
+    }
+  }, [isAuthenticated]);
+
+  // Return real-time messaging utilities
+  return realTime;
 }

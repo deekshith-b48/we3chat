@@ -2,18 +2,39 @@
 
 import { useState } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useWallet } from '@/hooks/use-wallet';
+import { useAuth } from '@/hooks/use-auth';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 
 export default function WalletConnect() {
-  const { connect, error } = useWallet();
-  const [isManualConnecting, setIsManualConnecting] = useState(false);
+  const { signIn, isLoading, error, signInWithEmail, signUpWithEmail } = useAuth();
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [emailMode, setEmailMode] = useState<'signin' | 'signup'>('signin');
 
-  const handleManualConnect = async () => {
-    setIsManualConnecting(true);
+  const handleEmailAuth = async () => {
+    setIsSigningIn(true);
     try {
-      await connect();
+      if (emailMode === 'signin') {
+        await signInWithEmail(email, password);
+      } else {
+        await signUpWithEmail(email, password);
+      }
+    } catch (error) {
+      console.error('Email auth failed:', error);
     } finally {
-      setIsManualConnecting(false);
+      setIsSigningIn(false);
+    }
+  };
+
+  const handleSignIn = async () => {
+    setIsSigningIn(true);
+    try {
+      await signIn();
+    } catch (error) {
+      console.error('Sign in failed:', error);
+    } finally {
+      setIsSigningIn(false);
     }
   };
 
@@ -88,16 +109,46 @@ export default function WalletConnect() {
             <h1 className="text-3xl font-bold text-gray-900">we3chat</h1>
           </div>
 
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Connect Your Wallet</h2>
-            <p className="text-gray-600">
-              Connect your Web3 wallet to start secure, decentralized messaging
-            </p>
+          <div className="text-center mb-8 space-y-2">
+            <h2 className="text-3xl font-bold text-gray-900">Welcome</h2>
+            <p className="text-gray-600">Sign in with email (primary) or connect your wallet</p>
           </div>
 
-          {/* Wallet Connection Options */}
-          <div className="space-y-6">
-            {/* RainbowKit Connect Button */}
+          <div className="space-y-8">
+            {/* Email Auth */}
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="font-medium text-gray-900">Email</h3>
+                <button onClick={() => setEmailMode(emailMode === 'signin' ? 'signup' : 'signin')} className="text-sm text-blue-600 hover:underline">
+                  {emailMode === 'signin' ? 'Need an account? Sign up' : 'Have an account? Sign in'}
+                </button>
+              </div>
+              <div className="space-y-3">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="w-full border rounded-md px-3 py-2"
+                />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Password"
+                  className="w-full border rounded-md px-3 py-2"
+                />
+                <button
+                  onClick={handleEmailAuth}
+                  disabled={isSigningIn || isLoading || !email || !password}
+                  className="w-full bg-blue-600 text-white py-2 rounded-md disabled:opacity-50"
+                >
+                  {isSigningIn || isLoading ? 'Please wait…' : emailMode === 'signin' ? 'Sign in' : 'Sign up'}
+                </button>
+              </div>
+            </div>
+
+            {/* Wallet Connection Options */}
             <div className="flex justify-center">
               <ConnectButton.Custom>
                 {({
@@ -127,6 +178,7 @@ export default function WalletConnect() {
                           userSelect: 'none',
                         },
                       })}
+                      className="w-full"
                     >
                       {(() => {
                         if (!connected) {
@@ -145,44 +197,66 @@ export default function WalletConnect() {
                         }
 
                         return (
-                          <div className="flex space-x-3">
+                          <div className="space-y-4">
+                            <div className="flex space-x-3">
+                              <button
+                                onClick={openAccountModal}
+                                type="button"
+                                className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                              >
+                                {account.displayName}
+                                {account.displayBalance
+                                  ? ` (${account.displayBalance})`
+                                  : ''}
+                              </button>
+                              
+                              <button
+                                onClick={openChainModal}
+                                type="button"
+                                className="bg-gray-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-700 transition-colors flex items-center space-x-2"
+                              >
+                                {chain.hasIcon && (
+                                  <div
+                                    style={{
+                                      background: chain.iconBackground,
+                                      width: 12,
+                                      height: 12,
+                                      borderRadius: 999,
+                                      overflow: 'hidden',
+                                    }}
+                                  >
+                                    {chain.iconUrl && (
+                                      <img
+                                        alt={chain.name ?? 'Chain icon'}
+                                        src={chain.iconUrl}
+                                        style={{ width: 12, height: 12 }}
+                                      />
+                                    )}
+                                  </div>
+                                )}
+                                <span>{chain.name}</span>
+                              </button>
+                            </div>
+
+                            {/* Sign In Button */}
                             <button
-                              onClick={openAccountModal}
-                              type="button"
-                              className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                              onClick={handleSignIn}
+                              disabled={isSigningIn || isLoading}
+                              className="w-full bg-purple-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-colors flex items-center justify-center space-x-3 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                              {account.displayName}
-                              {account.displayBalance
-                                ? ` (${account.displayBalance})`
-                                : ''}
-                            </button>
-                            
-                            <button
-                              onClick={openChainModal}
-                              type="button"
-                              className="bg-gray-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-gray-700 transition-colors"
-                            >
-                              {chain.hasIcon && (
-                                <div
-                                  style={{
-                                    background: chain.iconBackground,
-                                    width: 12,
-                                    height: 12,
-                                    borderRadius: 999,
-                                    overflow: 'hidden',
-                                    marginRight: 4,
-                                  }}
-                                >
-                                  {chain.iconUrl && (
-                                    <img
-                                      alt={chain.name ?? 'Chain icon'}
-                                      src={chain.iconUrl}
-                                      style={{ width: 12, height: 12 }}
-                                    />
-                                  )}
-                                </div>
+                              {isSigningIn || isLoading ? (
+                                <>
+                                  <LoadingSpinner size="small" color="white" />
+                                  <span>Signing In...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
+                                  </svg>
+                                  <span>Sign In with Ethereum</span>
+                                </>
                               )}
-                              {chain.name}
                             </button>
                           </div>
                         );
@@ -202,8 +276,9 @@ export default function WalletConnect() {
 
             {/* Info Section */}
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-              <h3 className="font-medium text-blue-900 mb-2">Why connect a wallet?</h3>
+              <h3 className="font-medium text-blue-900 mb-2">Why Sign In with Ethereum?</h3>
               <ul className="text-sm text-blue-800 space-y-1">
+                <li>• Secure authentication without passwords</li>
                 <li>• Your identity and messages are controlled by you</li>
                 <li>• End-to-end encryption with your own keys</li>
                 <li>• Messages stored on decentralized networks</li>

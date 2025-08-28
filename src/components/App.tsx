@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useMessageEvents } from '@/hooks/use-messaging';
+import { useAuth } from '@/hooks/use-auth';
+import { useWallet } from '@/hooks/use-wallet';
 import Dashboard from '@/components/Dashboard';
 import WalletConnect from '@/components/WalletConnect';
 import AccountSetup from '@/components/AccountSetup';
@@ -9,27 +10,18 @@ import NetworkSwitcher from '@/components/NetworkSwitcher';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import TransactionNotifications from '@/components/TransactionNotifications';
 import ErrorBoundary from '@/components/ErrorBoundary';
-import { useWallet, useWalletStatus } from '@/hooks/use-wallet';
-import { useChatStore } from '@/store/chat-store';
 
 export default function App() {
-  const { isConnected, isCorrectNetwork, isConnecting } = useWallet();
-  const { status } = useWalletStatus();
-  const user = useChatStore(state => state.user);
-  const isLoading = useChatStore(state => state.isLoading);
+  const { isConnected, isCorrectNetwork } = useWallet();
+  const { isAuthenticated, isLoading, user, error } = useAuth();
 
-  // Set up real-time event listening when ready
-  useMessageEvents();
-
-  // Show loading spinner during connection
-  if (isConnecting || isLoading) {
+  // Show loading spinner during initial authentication check
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <LoadingSpinner size="large" />
-          <p className="mt-4 text-gray-600">
-            {isConnecting ? 'Connecting wallet...' : 'Loading...'}
-          </p>
+          <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
     );
@@ -45,8 +37,13 @@ export default function App() {
     return <NetworkSwitcher />;
   }
 
-  // Show account setup if user needs to register or set encryption key
-  if (status !== 'ready') {
+  // Show wallet connection with sign-in if not authenticated
+  if (!isAuthenticated) {
+    return <WalletConnect />;
+  }
+
+  // Show account setup if user needs to complete registration
+  if (user && !user.isRegistered) {
     return <AccountSetup />;
   }
 
