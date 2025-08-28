@@ -1,6 +1,8 @@
 import { io, Socket } from 'socket.io-client';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_BASE_URL = typeof window !== 'undefined'
+  ? (process.env.NEXT_PUBLIC_API_URL || '') // same-origin when empty
+  : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000');
 
 // Types for API responses
 export interface ApiResponse<T = any> {
@@ -120,11 +122,11 @@ class ApiClient {
   }
 
   private async request<T>(
-    endpoint: string, 
+    endpoint: string,
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
-    
+
     const headers: HeadersInit = {
       'Content-Type': 'application/json',
       ...options.headers,
@@ -134,10 +136,18 @@ class ApiClient {
       headers.Authorization = `Bearer ${this.token}`;
     }
 
-    const response = await fetch(url, {
-      ...options,
-      headers,
-    });
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        ...options,
+        headers,
+      });
+    } catch (e) {
+      const hint = this.baseUrl
+        ? `Cannot reach API at ${this.baseUrl}. Set NEXT_PUBLIC_API_URL or ensure backend is reachable.`
+        : `Cannot reach same-origin /api. Set NEXT_PUBLIC_API_URL to your backend URL.`;
+      throw new Error(`Network error: ${hint}`);
+    }
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Request failed' }));
@@ -325,7 +335,8 @@ class SocketClient {
       this.disconnect();
     }
 
-    this.socket = io(API_BASE_URL, {
+    const base = API_BASE_URL || (typeof window !== 'undefined' ? window.location.origin : '');
+    this.socket = io(base, {
       auth: { token },
       transports: ['websocket', 'polling'],
     });
