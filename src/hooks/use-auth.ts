@@ -24,9 +24,31 @@ export function useAuth() {
   const { signMessageAsync } = useSignMessage();
   const { setUser, reset } = useChatStore();
 
-  // Check existing authentication on mount
+  // Check existing authentication on mount and Supabase listener
   useEffect(() => {
     checkExistingAuth();
+
+    const { data: sub } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        const address = session.user.email || session.user.id;
+        const user: User = {
+          id: session.user.id,
+          address,
+          username: session.user.user_metadata?.username || '',
+          bio: '',
+          avatar: '',
+          publicKey: '',
+          isRegistered: true,
+          createdAt: new Date().toISOString(),
+          lastSeen: new Date().toISOString(),
+        };
+        setState({ isAuthenticated: true, isLoading: false, user, error: null });
+        setUser({ address, username: user.username, publicKey: user.publicKey || '', isRegistered: true });
+      } else if (event === 'SIGNED_OUT') {
+        handleLogout();
+      }
+    });
+    return () => { sub.subscription.unsubscribe(); };
   }, []);
 
   // Handle wallet connection changes
@@ -40,42 +62,41 @@ export function useAuth() {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
+      // Prefer Supabase session
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData.session?.user) {
+        const sUser = sessionData.session.user;
+        const address = sUser.email || sUser.id;
+        const user: User = {
+          id: sUser.id,
+          address,
+          username: sUser.user_metadata?.username || '',
+          bio: '',
+          avatar: '',
+          publicKey: '',
+          isRegistered: true,
+          createdAt: new Date().toISOString(),
+          lastSeen: new Date().toISOString(),
+        };
+        setState({ isAuthenticated: true, isLoading: false, user, error: null });
+        setUser({ address, username: user.username, publicKey: user.publicKey || '', isRegistered: true });
+        return;
+      }
+
+      // Fallback: SIWE token
       const token = api.getToken();
-      
       if (!token) {
         setState(prev => ({ ...prev, isLoading: false }));
         return;
       }
 
-      // Verify token with backend
       const { user } = await api.getCurrentUser();
-      
-      setState({
-        isAuthenticated: true,
-        isLoading: false,
-        user,
-        error: null,
-      });
-
-      setUser({
-        address: user.address,
-        username: user.username || '',
-        publicKey: user.publicKey || '',
-        isRegistered: user.isRegistered,
-      });
-
-      // Connect socket
+      setState({ isAuthenticated: true, isLoading: false, user, error: null });
+      setUser({ address: user.address, username: user.username || '', publicKey: user.publicKey || '', isRegistered: user.isRegistered });
       connectSocket(token);
-
     } catch (error) {
-      console.error('Auth check failed:', error);
       api.setToken(null);
-      setState({
-        isAuthenticated: false,
-        isLoading: false,
-        user: null,
-        error: null,
-      });
+      setState({ isAuthenticated: false, isLoading: false, user: null, error: null });
     }
   }, [setUser]);
 
@@ -146,9 +167,9 @@ export function useAuth() {
     setState(prev => ({ ...prev, isLoading: true }));
 
     try {
-      await api.logout();
-    } catch (error) {
-      console.error('Logout error:', error);
+      await Promise.allSettled([api.logout(), supabase.auth.signOut()]);
+    } catch {
+      // ignore
     } finally {
       handleLogout();
     }
@@ -198,9 +219,49 @@ export function useAuth() {
     setState(prev => ({ ...prev, error: null }));
   }, []);
 
+  // Email auth methods
+  const signInWithEmail = useCallback(async (email: string, password: string) => {
+    setState(prev => ({ ...prev, isLoading: true, error: null }));
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setState(prev => ({ ...prev, isLoading: false, error: error.message }));
+      throw error;
+    }
+    const sUser = data.user!;
+    const address = sUser.email || sUser.id;
+    const user: User = {
+      id: sUser.id,
+      address,
+      username: sUser.user_metadata?.username || '',
+      bio: '',
+      avatar: '',
+      publicKey: '',
+      isRegistered: true,
+      createdAt: new Date().toISOString(),
+      lastSeen: new Date().toISOString(),
+    };
+    setUser({ address, username: user.username, publicKey: user.publicKey || '', isRegistered: true });
+    setState({ isAuthenticated: true, isLoading: false, user, error: null });
+    return user;
+  }, [setUser]);
+
+  const signUpWithEmail = useCallback(async (email: string, password: string) => {
+    setState(prev => ({ ...prev, isLoading: true, error: null }));
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) {
+      setState(prev => ({ ...prev, isLoading: false, error: error.message }));
+      throw error;
+    }
+    // Some setups require email confirmation
+    setState(prev => ({ ...prev, isLoading: false }));
+    return data.user;
+  }, []);
+
   return {
     ...state,
     signIn,
+    signInWithEmail,
+    signUpWithEmail,
     signOut,
     updateProfile,
     clearError,
