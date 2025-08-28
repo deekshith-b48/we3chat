@@ -29,7 +29,6 @@
     "@rainbow-me/rainbowkit": "^1.3.6",
     "web3.storage": "^4.5.5",
     "tweetnacl": "^1.0.3",
-    "@types/tweetnacl": "^1.0.0",
     "zustand": "^4.4.7",
     "lucide-react": "^0.294.0",
     "class-variance-authority": "^0.7.0",
