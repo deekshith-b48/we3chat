@@ -36,7 +36,9 @@ const polygonAmoy: Chain = {
 const { chains, publicClient, webSocketPublicClient } = configureChains(
   [polygonAmoy, polygonMumbai, polygon],
   [
-    alchemyProvider({ apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY ?? '' }),
+    ...(process.env.NEXT_PUBLIC_ALCHEMY_API_KEY
+      ? [alchemyProvider({ apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY as string })]
+      : []),
     publicProvider(),
   ]
 );
