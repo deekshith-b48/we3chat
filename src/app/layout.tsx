@@ -10,7 +10,11 @@ export const metadata: Metadata = {
   description: 'Secure, encrypted, blockchain-powered messaging platform',
   keywords: ['web3', 'chat', 'blockchain', 'encryption', 'decentralized'],
   authors: [{ name: 'we3chat' }],
-  viewport: 'width=device-width, initial-scale=1',
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
   themeColor: '#3b82f6',
 };
 
