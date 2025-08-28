@@ -1,238 +1,311 @@
-# we3chat - Decentralized Web3 Messaging Platform
+# we3chat - Production-Ready Decentralized Messaging
 
-A fully decentralized, end-to-end encrypted messaging platform built on blockchain technology with IPFS storage.
+A complete transformation from mock data to a production-ready decentralized messaging application with real-time features, blockchain integration, and modern architecture.
 
-## 🚀 Features
+## 🚀 What's New - Production Features
 
-### Core Functionality
-- **End-to-End Encryption**: Messages encrypted using X25519 + AES-GCM
-- **Blockchain Storage**: Message metadata stored on Polygon smart contracts
-- **IPFS Integration**: Encrypted message content stored on IPFS
-- **Real-time Messaging**: Live updates via blockchain event listening
-- **Wallet Authentication**: Connect with MetaMask, WalletConnect, etc.
-- **Friend System**: On-chain friend verification and management
+### ✅ **Authentication System**
+- **Sign-In with Ethereum (EIP-4361)** - Secure, passwordless authentication
+- **JWT-based sessions** - Scalable token management
+- **Automatic wallet connection** - Seamless user experience
 
-### Security & Privacy
-- **Client-side Encryption**: Private keys never leave your device
-- **Decentralized Storage**: No central servers or data collection
-- **Verifiable Messages**: All messages cryptographically verifiable
-- **Open Source**: Fully transparent and auditable code
+### ✅ **Backend Infrastructure**
+- **PostgreSQL Database** - Robust data storage with Drizzle ORM
+- **REST API** - Complete CRUD operations for users, conversations, messages
+- **Socket.io Real-time** - Instant messaging with presence indicators
+- **Rate limiting & Security** - Production-ready safeguards
 
-## 🛠 Tech Stack
+### ✅ **Dynamic Data & Real-time**
+- **Live friends list** - API-driven friend management
+- **Real-time messaging** - Instant message delivery via WebSockets
+- **Presence system** - Online/offline status tracking
+- **Typing indicators** - Enhanced user experience
 
-### Frontend
-- **Next.js 14** - React framework with App Router
-- **TypeScript** - Type-safe development
-- **TailwindCSS** - Utility-first styling
-- **Zustand** - Lightweight state management
+### ✅ **Hybrid Architecture**
+- **API-first approach** - Fast, reliable messaging via database
+- **Blockchain integration** - Optional on-chain message storage with IPFS
+- **Flexible deployment** - Works with or without smart contracts
 
-### Web3 Integration
-- **wagmi** - React hooks for Ethereum
-- **ethers.js** - Ethereum library
-- **RainbowKit** - Wallet connection UI
-- **Polygon Amoy** - Layer 2 blockchain network
+## 🏗️ Architecture Overview
 
-### Encryption & Storage
-- **tweetnacl** - X25519 key exchange + cryptography
-- **Web3.Storage** - IPFS pinning service
-- **Browser Storage** - Local key management
+```
+Frontend (Next.js + React)
+├── Authentication (SIWE)
+├── Real-time UI (Socket.io)
+├── API Client (REST)
+└── Wallet Integration (RainbowKit/Wagmi)
 
-## 🏗 Architecture
+Backend (Node.js + Express)
+├── REST API (Users, Conversations, Messages)
+├── Socket.io Server (Real-time events)
+├── Authentication (JWT + SIWE verification)
+└── Database (PostgreSQL + Drizzle ORM)
 
-### Data Flow
-1. **Message Sending**:
-   - Encrypt message with recipient's public key
-   - Upload encrypted payload to IPFS → get CID
-   - Compute CID hash and store on blockchain
-   - Real-time notification via blockchain events
+Optional Blockchain Layer
+├── Smart Contracts (Message storage)
+├── IPFS (Encrypted content)
+└── Transaction tracking
+```
 
-2. **Message Receiving**:
-   - Listen for blockchain events
-   - Fetch encrypted payload from IPFS using CID
-   - Decrypt using local private key
-   - Display in chat interface
+## 🛠️ Quick Start
 
-3. **Friend Management**:
-   - Add friends via Ethereum address
-   - Mutual verification through smart contracts
-   - Public key exchange for encryption
-
-## 📋 Prerequisites
-
+### Prerequisites
 - Node.js 18+ and npm
-- MetaMask or compatible Web3 wallet
-- Polygon Amoy testnet MATIC tokens
+- PostgreSQL database
+- (Optional) Ethereum wallet for testing
 
-## 🚀 Quick Start
-
-### 1. Environment Setup
-
-Create a `.env.local` file:
+### 1. Backend Setup
 
 ```bash
-# Smart Contract (deploy your own or use existing)
-NEXT_PUBLIC_CHAT_ADDRESS=0x1234567890123456789012345678901234567890
+# Navigate to backend directory
+cd backend
 
-# IPFS Storage (get free token from web3.storage)
-NEXT_PUBLIC_WEB3STORAGE_TOKEN=your_web3_storage_token
-
-# Wallet Connect (get free project ID)
-NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
-
-# Optional: Custom RPC
-NEXT_PUBLIC_RPC_URL=https://rpc-amoy.polygon.technology
-```
-
-### 2. Install Dependencies
-
-```bash
+# Install dependencies
 npm install
-```
 
-### 3. Start Development Server
+# Copy environment configuration
+cp .env.example .env
 
-```bash
+# Configure your database URL in .env
+DATABASE_URL=postgresql://username:password@localhost:5432/we3chat
+
+# Run database migrations
+npm run migrate
+
+# Start backend server
 npm run dev
 ```
 
-Visit http://localhost:3000 to see the application.
+Backend will run on `http://localhost:5000`
 
-### 4. Setup Wallet
+### 2. Frontend Setup
 
-1. Install MetaMask browser extension
-2. Add Polygon Amoy testnet:
-   - Network Name: Polygon Amoy
-   - RPC URL: https://rpc-amoy.polygon.technology
-   - Chain ID: 80002
-   - Currency: MATIC
-   - Explorer: https://amoy.polygonscan.com
+```bash
+# From root directory
+npm install
 
-3. Get testnet MATIC from [Polygon Faucet](https://faucet.polygon.technology/)
+# Copy environment configuration
+cp .env.local.example .env.local
 
-## 🔧 Configuration
+# Configure API URL in .env.local
+NEXT_PUBLIC_API_URL=http://localhost:5000
 
-### Smart Contract Deployment
-
-Deploy the ChatApp smart contract to Polygon Amoy:
-
-```solidity
-// Key contract functions:
-- createAccount(username, publicKey) - Register user
-- addFriend(friendAddress) - Add friend
-- sendMessage(to, cidHash, cid) - Send encrypted message
-- readMessage(other) - Get conversation history
+# Start frontend
+npm run dev
 ```
 
-### IPFS Storage Setup
+Frontend will run on `http://localhost:3000`
 
-1. Sign up at [Web3.Storage](https://web3.storage)
-2. Create API token
-3. Add token to environment variables
+### 3. Environment Configuration
 
-## 🔐 Security Features
+**Backend (.env):**
+```env
+DATABASE_URL=postgresql://username:password@localhost:5432/we3chat
+JWT_SECRET=your-super-secret-jwt-key
+FRONTEND_URL=http://localhost:3000
+PORT=5000
+```
 
-### Encryption Process
-1. **Key Generation**: X25519 keypair generated locally
-2. **Key Exchange**: Public keys stored on blockchain
-3. **Message Encryption**: Derive shared secret → HKDF → AES-GCM
-4. **Storage**: Only encrypted data stored on IPFS
+**Frontend (.env.local):**
+```env
+NEXT_PUBLIC_API_URL=http://localhost:5000
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your-project-id
+```
 
-### Privacy Guarantees
-- Private keys never transmitted or stored remotely
-- Message content never visible to third parties
-- Metadata minimization on blockchain
-- No central authority can access conversations
+## 📚 Key Features Implemented
 
-## 🏃‍♂️ Usage Guide
+### 🔐 **Authentication Flow**
+1. User connects wallet (RainbowKit)
+2. App generates SIWE message
+3. User signs message with wallet
+4. Backend verifies signature and issues JWT
+5. Socket.io connection established for real-time features
 
-### Getting Started
-1. **Connect Wallet** - Connect MetaMask to Polygon Amoy
-2. **Create Account** - Choose username and generate encryption keys
-3. **Add Friends** - Search by Ethereum address
-4. **Start Chatting** - Send end-to-end encrypted messages
+### 💬 **Messaging System**
+1. **API-based messaging** - Fast, reliable via PostgreSQL
+2. **Real-time delivery** - Socket.io for instant updates
+3. **Optional blockchain** - Store messages on-chain with IPFS
+4. **Message status tracking** - Pending/confirmed/failed states
 
-### Adding Friends
-- Enter friend's Ethereum address
-- They must have a we3chat account
-- Both parties must add each other for full friendship
+### 👥 **Friend Management**
+1. **Search users** - By username or wallet address
+2. **Send friend requests** - Mutual approval system
+3. **Dynamic friends list** - API-driven with real-time updates
+4. **Presence tracking** - Online/offline status
 
-### Sending Messages
-- Select friend from sidebar
-- Type message and press Enter
-- Message automatically encrypted and stored on IPFS
-- Transaction confirmed on blockchain
+### 🔄 **Real-time Features**
+- Instant message delivery
+- Typing indicators
+- Presence updates (online/offline)
+- Connection status
+- Message status updates
 
-## 🔍 Troubleshooting
+## 🌐 API Endpoints
 
-### Common Issues
+### Authentication
+- `GET /api/auth/nonce` - Get nonce for SIWE
+- `POST /api/auth/verify` - Verify SIWE message
+- `GET /api/auth/me` - Get current user
+- `POST /api/auth/logout` - Logout user
 
-**Wallet Connection Issues**
-- Ensure MetaMask is installed and unlocked
-- Switch to Polygon Amoy network
-- Check you have testnet MATIC for transactions
+### Users
+- `GET /api/users/profile/:address` - Get user profile
+- `PUT /api/users/profile` - Update profile
+- `GET /api/users/friends` - Get friends list
+- `POST /api/users/friends/request` - Send friend request
+- `GET /api/users/search` - Search users
 
-**Message Sending Fails**
-- Verify friend has set up encryption key
-- Check IPFS storage token is valid
-- Ensure sufficient MATIC for gas fees
+### Conversations
+- `GET /api/conversations` - Get user conversations
+- `POST /api/conversations` - Create conversation
+- `GET /api/conversations/:id` - Get conversation details
 
-**Decryption Errors**
-- Friend must have valid public key on-chain
-- Both parties must have compatible encryption setup
-- Try refreshing and reloading conversation
+### Messages
+- `GET /api/messages/:conversationId` - Get messages
+- `POST /api/messages` - Send message
+- `PUT /api/messages/:id` - Update message status
 
-### Getting Help
-- Check browser console for error messages
-- Verify all environment variables are set
-- Test encryption with built-in crypto test tool
+## 🔌 Socket.io Events
 
-## 📚 Development
+### Client → Server
+- `join_conversation` - Join conversation room
+- `send_message` - Send message via socket
+- `typing_start/stop` - Typing indicators
+- `update_presence` - Update online status
 
-### Key Components
-- `src/lib/crypto.ts` - Encryption/decryption logic
-- `src/lib/ipfs.ts` - IPFS storage integration  
-- `src/hooks/use-messaging.ts` - Message sending/receiving
-- `src/components/ChatArea.tsx` - Main chat interface
+### Server → Client
+- `new_message` - Receive new message
+- `message_updated` - Message status update
+- `user_typing` - Someone is typing
+- `friend_presence_updated` - Friend status change
 
-### Build for Production
+## 🚀 Deployment
+
+### Database Setup (Production)
 ```bash
+# Install PostgreSQL
+# Create database
+createdb we3chat
+
+# Run migrations
+npm run migrate
+```
+
+### Backend Deployment
+```bash
+# Build
 npm run build
+
+# Start production server
 npm start
 ```
 
-### Testing Encryption
-Use the built-in crypto test in Profile → Security tab to verify encryption is working correctly.
-
-## 🌐 Deployment
-
-Deploy to Vercel, Netlify, or any platform supporting Next.js:
-
+### Frontend Deployment
 ```bash
+# Build
 npm run build
+
+# Start production server
+npm start
 ```
 
-Set environment variables in your deployment platform.
+### Environment Variables (Production)
+- Set secure `JWT_SECRET`
+- Configure production `DATABASE_URL`
+- Set proper CORS origins
+- Enable SSL for database connections
 
-## 🤝 Contributing
+## 🔧 Development Scripts
 
-1. Fork the repository
-2. Create feature branch
-3. Make changes
-4. Test thoroughly
-5. Submit pull request
+**Backend:**
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run migrate` - Run database migrations
+- `npm test` - Run tests
+
+**Frontend:**
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run lint` - Run ESLint
+- `npm run type-check` - TypeScript check
+
+## 📁 Project Structure
+
+```
+├── backend/                 # Backend API server
+│   ├── src/
+│   │   ├── db/             # Database schema & migrations
+│   │   ├── routes/         # API route handlers
+│   │   ├── socket/         # Socket.io handlers
+│   │   ├── middleware/     # Auth & other middleware
+│   │   └── index.ts        # Main server file
+│   └── package.json
+│
+├── src/                    # Frontend application
+│   ├── app/                # Next.js app directory
+│   ├── components/         # React components
+│   ├── hooks/              # Custom hooks
+│   ├── lib/                # Utility libraries
+│   └── store/              # State management
+│
+├── package.json            # Frontend dependencies
+└── README.md              # This file
+```
+
+## 🔐 Security Features
+
+- **JWT-based authentication** - Secure session management
+- **SIWE verification** - Cryptographic authentication
+- **Rate limiting** - API abuse prevention
+- **Input validation** - SQL injection prevention
+- **CORS configuration** - Cross-origin security
+- **Helmet.js** - Security headers
+
+## 🎯 Next Steps & Enhancements
+
+### Immediate Improvements
+- [ ] Push notifications for new messages
+- [ ] File/image sharing via IPFS
+- [ ] Group chat functionality
+- [ ] Message reactions and threads
+
+### Advanced Features
+- [ ] Voice/video calling integration
+- [ ] Mobile app (React Native)
+- [ ] Message search and indexing
+- [ ] Backup/restore functionality
+
+### Scaling Considerations
+- [ ] Redis for session storage
+- [ ] Message queue for background jobs
+- [ ] CDN for file attachments
+- [ ] Database read replicas
+
+## 🛟 Troubleshooting
+
+### Common Issues
+
+**Backend won't start:**
+- Check database connection
+- Verify environment variables
+- Ensure PostgreSQL is running
+
+**Frontend can't connect:**
+- Verify `NEXT_PUBLIC_API_URL`
+- Check CORS configuration
+- Ensure backend is running
+
+**Socket.io issues:**
+- Check authentication token
+- Verify WebSocket support
+- Check firewall settings
+
+### Support
+- Check logs in browser console
+- Review backend server logs
+- Verify environment configuration
+- Test database connectivity
 
 ## 📄 License
 
-MIT License - see LICENSE file for details.
-
-## 🔗 Links
-
-- [Live Demo](https://we3chat.vercel.app) (Coming Soon)
-- [Smart Contract](https://amoy.polygonscan.com/address/CONTRACT_ADDRESS)
-- [Documentation](https://docs.we3chat.com) (Coming Soon)
-
----
-
-**Built with ❤️ by the we3chat team**
-
-*The future of messaging is decentralized*
+MIT License - feel free to use this project as a foundation for your own decentralized messaging applications.
