@@ -109,16 +109,46 @@ export default function WalletConnect() {
             <h1 className="text-3xl font-bold text-gray-900">we3chat</h1>
           </div>
 
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Connect Your Wallet</h2>
-            <p className="text-gray-600">
-              Connect your Web3 wallet and sign in to start secure, decentralized messaging
-            </p>
+          <div className="text-center mb-8 space-y-2">
+            <h2 className="text-3xl font-bold text-gray-900">Welcome</h2>
+            <p className="text-gray-600">Sign in with email (primary) or connect your wallet</p>
           </div>
 
-          {/* Wallet Connection Options */}
-          <div className="space-y-6">
-            {/* RainbowKit Connect Button */}
+          <div className="space-y-8">
+            {/* Email Auth */}
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="font-medium text-gray-900">Email</h3>
+                <button onClick={() => setEmailMode(emailMode === 'signin' ? 'signup' : 'signin')} className="text-sm text-blue-600 hover:underline">
+                  {emailMode === 'signin' ? 'Need an account? Sign up' : 'Have an account? Sign in'}
+                </button>
+              </div>
+              <div className="space-y-3">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="w-full border rounded-md px-3 py-2"
+                />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Password"
+                  className="w-full border rounded-md px-3 py-2"
+                />
+                <button
+                  onClick={handleEmailAuth}
+                  disabled={isSigningIn || isLoading || !email || !password}
+                  className="w-full bg-blue-600 text-white py-2 rounded-md disabled:opacity-50"
+                >
+                  {isSigningIn || isLoading ? 'Please wait…' : emailMode === 'signin' ? 'Sign in' : 'Sign up'}
+                </button>
+              </div>
+            </div>
+
+            {/* Wallet Connection Options */}
             <div className="flex justify-center">
               <ConnectButton.Custom>
                 {({
