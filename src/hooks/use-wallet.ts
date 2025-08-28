@@ -3,6 +3,7 @@ import { useAccount, useDisconnect, useNetwork, useSwitchNetwork } from 'wagmi';
 import { useChatStore } from '@/store/chat-store';
 import { getOrCreateX25519, getPublicKeyHex, clearStoredKeyPair } from '@/lib/crypto';
 import { getContract, getSigner } from '@/lib/ethers-helpers';
+import { CHAT_ADDRESS } from '@/lib/contract';
 
 export interface WalletState {
   isConnected: boolean;
