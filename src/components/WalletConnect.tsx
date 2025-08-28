@@ -1,21 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
-import { useWallet } from '@/hooks/use-wallet';
 
 export default function WalletConnect() {
-  const { connect, error } = useWallet();
-  const [isManualConnecting, setIsManualConnecting] = useState(false);
-
-  const handleManualConnect = async () => {
-    setIsManualConnecting(true);
-    try {
-      await connect();
-    } finally {
-      setIsManualConnecting(false);
-    }
-  };
 
   return (
     <div className="min-h-screen flex">
@@ -193,12 +180,6 @@ export default function WalletConnect() {
               </ConnectButton.Custom>
             </div>
 
-            {/* Error Display */}
-            {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-sm text-red-600">{error}</p>
-              </div>
-            )}
 
             {/* Info Section */}
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
