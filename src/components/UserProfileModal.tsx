@@ -46,9 +46,13 @@ export default function UserProfileModal({ isOpen, onClose }: UserProfileModalPr
 
   const copyToClipboard = async (text: string) => {
     try {
-      await navigator.clipboard.writeText(text);
+      const { copyText } = await import('@/lib/copy');
+      const ok = await copyText(text);
+      if (!ok) {
+        alert('Copy permission is blocked in this preview. Please select and copy manually.');
+      }
     } catch (error) {
-      console.error('Failed to copy to clipboard:', error);
+      alert('Copy failed. Please select and copy manually.');
     }
   };
 
