@@ -143,15 +143,9 @@ export function useWallet(): WalletState {
   };
 
   const connect = async () => {
-    try {
-      setError(null);
-      const connector = connectors[0]; // Use first available connector (MetaMask, etc.)
-      if (connector) {
-        wagmiConnect({ connector });
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to connect wallet');
-    }
+    // Note: Connection is handled by RainbowKit ConnectButton to prevent conflicts
+    // This function is kept for interface compatibility but does nothing
+    setError(null);
   };
 
   const disconnect = async () => {
