@@ -11,3 +11,5 @@ export async function GET(_req: NextRequest) {
   res.cookies.set('siwe_nonce', nonce, { httpOnly: true, sameSite: 'lax', secure: true, path: '/' });
   return res;
 }
+
+export const runtime = 'nodejs';
