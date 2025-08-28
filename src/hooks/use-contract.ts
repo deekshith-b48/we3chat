@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
 import { getContract, getSigner, waitForTransaction, formatContractError } from '@/lib/ethers-helpers';
 import { useChatStore } from '@/store/chat-store';
