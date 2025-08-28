@@ -94,7 +94,11 @@ export function useWallet(): WalletState {
       // Fetch public key safely
       let onChainPublicKey: string = '';
       try {
-        onChainPublicKey = await contract.x25519PublicKey(userAddress);
+        if ((contract as any).getEncryptionKey) {
+          onChainPublicKey = await (contract as any).getEncryptionKey(userAddress);
+        } else {
+          onChainPublicKey = await contract.x25519PublicKey(userAddress);
+        }
       } catch (e) {
         onChainPublicKey = '0x';
       }
@@ -118,30 +122,32 @@ export function useWallet(): WalletState {
     }
   };
 
-  const fetchFriends = async (userAddress: string) => {
+  const fetchFriends = async (_userAddress: string) => {
     try {
       const contract = getContract();
-      let friendAddresses: string[] = [];
+      let friendList: Array<{ friendAddress: string; name: string; addedAt: string | number }>;
       try {
-        friendAddresses = await contract.getFriends(userAddress);
+        friendList = await (contract as any).getFriends();
       } catch (e) {
-        friendAddresses = [];
+        friendList = [] as any;
       }
 
       const friends = await Promise.all(
-        friendAddresses.map(async (friendAddress: string) => {
-          let username = '';
+        (friendList || []).map(async (f: any) => {
+          const friendAddress: string = f.friendAddress || f[0];
+          const name: string = f.name || f[1] || '';
           let publicKey = '';
           try {
-            username = await contract.usernames(friendAddress);
-          } catch {}
-          try {
-            publicKey = await contract.x25519PublicKey(friendAddress);
+            if ((contract as any).getEncryptionKey) {
+              publicKey = await (contract as any).getEncryptionKey(friendAddress);
+            } else {
+              publicKey = await contract.x25519PublicKey(friendAddress);
+            }
           } catch {}
 
           return {
             address: friendAddress,
-            username: username || friendAddress.slice(0, 8) + '...',
+            username: name || friendAddress.slice(0, 8) + '...',
             publicKey: publicKey || '',
             isOnline: false,
           };
