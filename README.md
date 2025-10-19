@@ -1,264 +1,180 @@
-# We3Chat - Next-Gen Decentralized Messaging
+# We3Chat - Decentralized Chat Application
 
-![We3Chat Logo](https://via.placeholder.com/400x100/3b82f6/ffffff?text=We3Chat)
+![We3Chat Logo](https://img.shields.io/badge/We3Chat-Decentralized%20Chat-blue?style=for-the-badge&logo=ethereum)
+![IPFS](https://img.shields.io/badge/IPFS-Decentralized%20Storage-orange?style=for-the-badge&logo=ipfs)
+![Web3](https://img.shields.io/badge/Web3-Ready-green?style=for-the-badge&logo=ethereum)
 
-> The future of messaging: Secure, encrypted, blockchain-powered, and fully decentralized chat platform with Web3 integration.
+A next-generation decentralized chat application with full Web3 integration, IPFS storage, and real-time messaging capabilities.
 
-## 🚀 Features
+## 🌟 Features
 
-### Core Messaging
-- **End-to-End Encryption**: Messages are encrypted using advanced cryptographic protocols
-- **Real-time Communication**: Instant messaging with WebSocket connections
-- **Group Chats**: Create and manage group conversations with multiple participants
-- **File Sharing**: Share images, videos, documents, and other files via IPFS
-- **Message Status**: See when messages are sent, delivered, and read
-- **Typing Indicators**: Know when someone is typing
-- **Message Reactions**: React to messages with emojis
-- **Message Threading**: Reply to specific messages in conversations
+### 🔐 **Web3 Authentication**
+- Wallet-based authentication using SIWE (Sign-In with Ethereum)
+- Support for MetaMask, WalletConnect, and other Web3 wallets
+- Secure JWT token management
 
-### Web3 Integration
-- **Wallet Connection**: Connect with MetaMask, WalletConnect, Coinbase Wallet, and more
-- **Blockchain Storage**: Messages and metadata stored on the blockchain
-- **IPFS Integration**: Decentralized file storage and content distribution
-- **Smart Contracts**: Custom Solidity contracts for chat functionality
-- **NFT Sharing**: Share and display NFTs in conversations
-- **Token Transfers**: Send cryptocurrency directly in chat
-- **Decentralized Identity**: User profiles and authentication via blockchain
+### 📦 **Free IPFS Storage**
+- **Pinata Integration** - 1GB free storage per month
+- **Public Gateway Fallback** - Unlimited storage (non-persistent)
+- **Local Storage Backup** - Device-based fallback
+- **Automatic Failover** - Seamless provider switching
 
-### Advanced Features
-- **P2P Messaging**: Direct peer-to-peer communication using LibP2P
-- **Offline Support**: Continue using the app even when offline
-- **PWA Support**: Install as a native app on mobile and desktop
-- **Dark/Light Theme**: Beautiful UI with theme switching
-- **Responsive Design**: Works perfectly on all devices
-- **Search**: Find messages and conversations quickly
-- **Notifications**: Real-time push notifications
-- **Voice Messages**: Record and send voice messages
-- **Video Calls**: Make video calls directly in the app
-- **Screen Sharing**: Share your screen during conversations
+### 💬 **Real-time Messaging**
+- WebSocket-based real-time communication
+- Message encryption and decryption
+- Typing indicators and presence status
+- Message status tracking (sent, delivered, read)
 
-## 🛠️ Tech Stack
+### 🎨 **Modern UI/UX**
+- Built with React 18 and Next.js 14
+- Tailwind CSS for styling
+- Responsive design for all devices
+- Dark/light mode support
 
-### Frontend
-- **Next.js 14** - React framework with App Router
-- **TypeScript** - Type-safe JavaScript
-- **TailwindCSS** - Utility-first CSS framework
-- **Framer Motion** - Animation library
-- **React Query** - Data fetching and caching
-- **Zustand** - State management
-- **React Hook Form** - Form handling
-- **React Hot Toast** - Notifications
-
-### Web3 & Blockchain
-- **Ethers.js** - Ethereum library
-- **Wagmi** - React hooks for Ethereum
-- **RainbowKit** - Wallet connection UI
-- **Viem** - TypeScript interface for Ethereum
-- **Hardhat** - Smart contract development
-- **OpenZeppelin** - Smart contract libraries
-
-### Decentralized Storage
-- **IPFS** - InterPlanetary File System
-- **Web3.Storage** - Decentralized storage service
-- **LibP2P** - Peer-to-peer networking
-- **Ceramic** - Decentralized data network
-
-### Backend & Infrastructure
-- **Supabase** - Backend as a Service
-- **PostgreSQL** - Database
-- **Redis** - Caching and sessions
-- **Socket.io** - Real-time communication
-- **Express.js** - API server
+### 🔧 **Developer Experience**
+- Full TypeScript support
+- Comprehensive error handling
+- Hot reload development
+- Production-ready build system
 
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Node.js 18+ 
 - npm or yarn
-- Git
-- MetaMask or compatible wallet
+- Web3 wallet (MetaMask recommended)
 
 ### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/we3chat/we3chat.git
-   cd we3chat
-   ```
+```bash
+# Clone the repository
+git clone https://github.com/YOUR_USERNAME/we3chat.git
+cd we3chat
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
+# Install dependencies
+npm install
 
-3. **Set up environment variables**
-   ```bash
-   cp .env.example .env.local
-   ```
-   
-   Edit `.env.local` with your configuration:
-   ```env
-   NEXT_PUBLIC_CHAIN_ID=80002
-   NEXT_PUBLIC_RPC_URL=https://rpc-amoy.polygon.technology
-   NEXT_PUBLIC_CHAT_ADDRESS=0xYourContractAddress
-   NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key
-   NEXT_PUBLIC_WEB3_STORAGE_TOKEN=your_web3_storage_token
-   ```
+# Start the development server
+npm run dev
+```
 
-4. **Deploy smart contracts**
-   ```bash
-   # Install Hardhat dependencies
-   npm install @openzeppelin/contracts
+### Environment Setup
 
-   # Compile contracts
-   npm run contract:compile
+Create a `.env.local` file in the root directory:
 
-   # Deploy to local network
-   npm run contract:deploy
-   ```
+```bash
+# Backend API
+NEXT_PUBLIC_API_URL=http://localhost:5000
+NEXT_PUBLIC_WS_URL=ws://localhost:5000
 
-5. **Start the development server**
-   ```bash
-   npm run dev
-   ```
+# IPFS Configuration (Optional - works without)
+NEXT_PUBLIC_PINATA_API_KEY=your_pinata_api_key
+NEXT_PUBLIC_PINATA_SECRET_KEY=your_pinata_secret_key
 
-6. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+# Feature Flags
+NEXT_PUBLIC_ENABLE_IPFS=true
+NEXT_PUBLIC_ENABLE_BLOCKCHAIN=true
+```
 
-## 📱 Usage
+## 📁 Project Structure
 
-### Getting Started
-1. **Connect Wallet**: Click "Connect Wallet" and select your preferred wallet
-2. **Authenticate**: Sign the message to authenticate with We3Chat
-3. **Create Profile**: Set up your username, display name, and avatar
-4. **Start Chatting**: Add friends and start conversations!
-
-### Features Guide
-
-#### Sending Messages
-- Type your message in the input field
-- Press Enter to send
-- Use the attachment button to share files
-- Long press on messages to see options
-
-#### Group Chats
-- Click "New Group" to create a group
-- Add members by their wallet addresses
-- Set group name and description
-- Manage group settings and permissions
-
-#### File Sharing
-- Click the attachment button
-- Select files from your device
-- Files are automatically uploaded to IPFS
-- Share with friends or in groups
-
-#### Web3 Features
-- View your wallet balance
-- Send cryptocurrency in chat
-- Share NFTs and view them inline
-- Access decentralized storage
-
-## 🔧 Development
-
-### Project Structure
 ```
 we3chat/
-├── contracts/          # Smart contracts
-├── src/
-│   ├── app/           # Next.js app directory
-│   ├── components/    # React components
-│   ├── lib/           # Utilities and services
-│   ├── hooks/         # Custom React hooks
-│   └── types/         # TypeScript types
-├── public/            # Static assets
-└── docs/              # Documentation
+├── src/                    # Frontend source code
+│   ├── app/               # Next.js app directory
+│   ├── components/        # React components
+│   ├── hooks/            # Custom React hooks
+│   ├── lib/              # Utility libraries
+│   └── utils/            # Helper functions
+├── backend/              # Backend API server
+│   ├── src/              # TypeScript source
+│   ├── routes/           # API routes
+│   └── services/         # Business logic
+├── contracts/            # Smart contracts
+├── docs/                 # Documentation
+└── public/               # Static assets
 ```
 
+## 🔧 Configuration
+
+### IPFS Setup (Optional)
+
+For enhanced IPFS functionality, configure Pinata:
+
+1. Sign up at [Pinata.cloud](https://pinata.cloud/)
+2. Get your API keys from the dashboard
+3. Add them to your `.env.local` file
+
+### Web3 Configuration
+
+The app automatically detects your Web3 wallet. No additional configuration needed!
+
+## 📚 Documentation
+
+- [IPFS Setup Guide](IPFS_SETUP_GUIDE.md) - Configure IPFS storage
+- [Web3 Setup Guide](WEB3_SETUP_GUIDE.md) - Web3 integration details
+- [Quick Start Guide](QUICK_START.md) - Get started quickly
+- [Deployment Guide](DEPLOYMENT_GUIDE.md) - Deploy to production
+
+## 🛠️ Development
+
 ### Available Scripts
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
-- `npm run type-check` - Run TypeScript checks
-- `npm run contract:compile` - Compile smart contracts
-- `npm run contract:deploy` - Deploy contracts
-- `npm run contract:test` - Test contracts
 
-### Contributing
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+```bash
+# Development
+npm run dev          # Start frontend development server
+npm run build        # Build for production
+npm run start        # Start production server
 
-## 🔒 Security
+# Backend
+cd backend
+npm run dev          # Start backend development server
+npm run build        # Build backend
+npm run start        # Start backend production server
+```
 
-### Encryption
-- All messages are encrypted end-to-end
-- Private keys never leave your device
-- Files are encrypted before IPFS upload
-- Smart contracts use secure cryptographic functions
+### Tech Stack
 
-### Privacy
-- No central server stores your messages
-- Decentralized storage ensures data availability
-- User identities are pseudonymous
-- Optional metadata collection
+**Frontend:**
+- Next.js 14
+- React 18
+- TypeScript
+- Tailwind CSS
+- Wagmi (Web3)
+- Socket.io Client
 
-### Best Practices
-- Always verify smart contract addresses
-- Keep your private keys secure
-- Use hardware wallets for large amounts
-- Regularly update your dependencies
+**Backend:**
+- Express.js
+- TypeScript
+- Socket.io
+- JWT Authentication
+- IPFS Integration
+
+**Storage:**
+- IPFS (Pinata + Public Gateways)
+- Local Storage (fallback)
 
 ## 🌐 Deployment
 
-### Vercel (Recommended)
+### Frontend (Vercel)
+
 1. Connect your GitHub repository to Vercel
-2. Set environment variables in Vercel dashboard
-3. Deploy automatically on push to main branch
+2. Set environment variables
+3. Deploy automatically
 
-### Docker
-```bash
-# Build Docker image
-docker build -t we3chat .
+### Backend (Railway/Heroku)
 
-# Run container
-docker run -p 3000:3000 we3chat
-```
+1. Connect your repository
+2. Set environment variables
+3. Deploy
 
-### Manual Deployment
-1. Build the application: `npm run build`
-2. Start the production server: `npm run start`
-3. Configure your web server (Nginx, Apache, etc.)
-4. Set up SSL certificates
-5. Configure environment variables
+## 🤝 Contributing
 
-## 📊 Monitoring & Analytics
-
-### Built-in Monitoring
-- Real-time connection status
-- Message delivery tracking
-- Error logging and reporting
-- Performance metrics
-
-### Third-party Integration
-- Sentry for error tracking
-- Mixpanel for analytics
-- LogRocket for session replay
-- Google Analytics for web analytics
-
-## 🤝 Community
-
-- **Discord**: [Join our Discord](https://discord.gg/we3chat)
-- **Twitter**: [@We3Chat](https://twitter.com/we3chat)
-- **GitHub**: [GitHub Repository](https://github.com/we3chat/we3chat)
-- **Documentation**: [docs.we3chat.com](https://docs.we3chat.com)
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
 
 ## 📄 License
 
@@ -266,23 +182,22 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- [Ethereum Foundation](https://ethereum.org) for the blockchain infrastructure
-- [IPFS](https://ipfs.io) for decentralized storage
-- [Supabase](https://supabase.com) for backend services
-- [Vercel](https://vercel.com) for hosting and deployment
-- [OpenZeppelin](https://openzeppelin.com) for smart contract libraries
-- [RainbowKit](https://rainbowkit.com) for wallet connection UI
+- [IPFS](https://ipfs.io/) - Decentralized storage
+- [Pinata](https://pinata.cloud/) - IPFS pinning service
+- [Ethereum](https://ethereum.org/) - Blockchain platform
+- [Next.js](https://nextjs.org/) - React framework
+- [Tailwind CSS](https://tailwindcss.com/) - CSS framework
 
-## 🐛 Bug Reports
+## 📞 Support
 
-Found a bug? Please report it on our [GitHub Issues](https://github.com/we3chat/we3chat/issues) page.
-
-## 💡 Feature Requests
-
-Have an idea for a new feature? We'd love to hear it! Submit your request on our [GitHub Discussions](https://github.com/we3chat/we3chat/discussions) page.
+- Create an issue for bug reports
+- Start a discussion for questions
+- Check the documentation for guides
 
 ---
 
-**Built with ❤️ by the We3Chat Team**
+**Built with ❤️ for the decentralized web**
 
-*The future of messaging is decentralized.*
+[![GitHub stars](https://img.shields.io/github/stars/YOUR_USERNAME/we3chat?style=social)](https://github.com/YOUR_USERNAME/we3chat)
+[![GitHub forks](https://img.shields.io/github/forks/YOUR_USERNAME/we3chat?style=social)](https://github.com/YOUR_USERNAME/we3chat)
+[![GitHub issues](https://img.shields.io/github/issues/YOUR_USERNAME/we3chat)](https://github.com/YOUR_USERNAME/we3chat/issues)
