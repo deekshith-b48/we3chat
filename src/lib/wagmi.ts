@@ -3,7 +3,7 @@ import { polygonAmoy } from 'viem/chains';
 import { injected, walletConnect, coinbaseWallet } from 'wagmi/connectors';
 
 // Get environment variables
-const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID!;
+const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || 'default-project-id';
 const rpcUrl = process.env.NEXT_PUBLIC_POLYGON_RPC_URL || 'https://rpc-amoy.polygon.technology';
 
 // Configure connectors

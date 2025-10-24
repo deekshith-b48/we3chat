@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useAuth } from './AuthProvider';
 
 interface ProtectedRouteProps {
@@ -8,6 +8,7 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
 
   // Show loading spinner while checking auth status
   if (isLoading) {
@@ -23,7 +24,8 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    router.push('/login');
+    return null;
   }
 
   return <>{children}</>;
