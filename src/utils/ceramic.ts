@@ -1,184 +1,163 @@
-/**
- * Ceramic Client Configuration
- * 
- * This creates a Ceramic client that works with our runtime configuration
- * and handles DID authentication for decentralized data storage.
- */
+// Ceramic client utilities for decentralized data storage
+// TODO: Install @ceramicnetwork/http-client, @ceramicnetwork/stream-tile, @ceramicnetwork/blockchain-utils-linking
 
-import { CeramicClient } from '@ceramicnetwork/http-client';
-import { EthereumAuthProvider } from '@ceramicnetwork/blockchain-utils-linking';
-import { DIDSession } from 'did-session';
-import { getConfig } from './config';
+interface AppConfig {
+  supabase: {
+    url: string;
+    anonKey: string;
+  };
+  ceramic: {
+    nodeUrl: string;
+    network: string;
+  };
+  environment: string;
+}
 
-let ceramicClient: CeramicClient | null = null;
-let currentSession: DIDSession | null = null;
+let config: AppConfig | null = null;
 
-/**
- * Initialize Ceramic client with runtime configuration
- */
-export async function createCeramicClient(): Promise<CeramicClient> {
-  if (ceramicClient) {
-    return ceramicClient;
-  }
-
-  const config = await getConfig();
+export async function loadConfig(): Promise<AppConfig> {
+  if (config) return config;
   
-  ceramicClient = new CeramicClient(config.ceramic.nodeUrl, {
-    syncInterval: 10000, // Sync every 10 seconds
-  });
-
-  console.log('✅ Ceramic client initialized');
-  return ceramicClient;
-}
-
-/**
- * Get the current Ceramic client
- * Throws an error if client hasn't been initialized
- */
-export function getCeramicClient(): CeramicClient {
-  if (!ceramicClient) {
-    throw new Error('Ceramic client not initialized. Call createCeramicClient() first.');
-  }
-  return ceramicClient;
-}
-
-/**
- * Authenticate with Ceramic using Ethereum wallet
- */
-export async function authenticateWithCeramic(): Promise<DIDSession> {
-  if (currentSession && currentSession.isExpired === false) {
-    return currentSession;
-  }
-
-  // Check if MetaMask is available
-  if (typeof window.ethereum === 'undefined') {
-    throw new Error('MetaMask is not installed. Please install MetaMask to continue.');
-  }
-
   try {
-    // Ensure Ceramic client is initialized before authentication
-    if (!ceramicClient) {
-      await createCeramicClient();
-    }
-
-    // Request account access
-    const accounts = await window.ethereum.request({
-      method: 'eth_requestAccounts',
-    });
-
-    if (accounts.length === 0) {
-      throw new Error('No accounts found. Please connect your wallet.');
-    }
-
-    const account = accounts[0];
-    
-    // For now, create a simple mock session
-    // In a real implementation, you'd use proper Ceramic authentication
-    const mockSession = {
-      did: { id: `did:ethr:${account}` },
-      isExpired: false
-    } as any;
-
-    // Set the session on the Ceramic client
-    const client = getCeramicClient();
-    client.did = mockSession.did;
-
-    currentSession = mockSession;
-    
-    console.log('✅ Authenticated with Ceramic:', mockSession.did.id);
-    return mockSession;
+    const response = await fetch('/config.json');
+    config = await response.json();
+    return config!;
   } catch (error) {
-    console.error('❌ Failed to authenticate with Ceramic:', error);
-    throw new Error(`Authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    console.error('Failed to load config:', error);
+    // Fallback to environment variables for development
+    config = {
+      supabase: {
+        url: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+        anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+      },
+      ceramic: {
+        nodeUrl: process.env.NEXT_PUBLIC_CERAMIC_NODE_URL || 'https://ceramic-clay.3boxlabs.com',
+        network: process.env.NEXT_PUBLIC_CERAMIC_NETWORK || 'testnet-clay'
+      },
+      environment: process.env.NODE_ENV || 'development'
+    };
+    return config!;
   }
 }
 
-/**
- * Get the current DID session
- */
-export function getCurrentSession(): DIDSession | null {
-  return currentSession;
-}
+// Mock Ceramic client for now - replace with real implementation
+class MockCeramicClient {
+  private streams = new Map<string, Record<string, unknown>>();
+  public did: { id: string } | null = null;
 
-/**
- * Check if user is authenticated with Ceramic
- */
-export function isAuthenticated(): boolean {
-  return currentSession !== null && currentSession.isExpired === false;
-}
-
-/**
- * Sign out from Ceramic
- */
-export function signOutFromCeramic(): void {
-  currentSession = null;
-  if (ceramicClient) {
-    (ceramicClient as any).did = undefined;
+  async setDIDProvider(): Promise<void> {
+    // Mock DID authentication - no provider needed in mock
+    console.log('Mock DID provider set for development');
+    this.did = { id: `did:3:mock_${Date.now()}` };
   }
-  console.log('✅ Signed out from Ceramic');
-}
 
-/**
- * Get the current user's DID
- */
-export function getCurrentDID(): string | null {
-  if (currentSession && !currentSession.isExpired) {
-    return currentSession.did.id;
+  async createStream(content: Record<string, unknown>, metadata: Record<string, unknown>): Promise<{ id: string }> {
+    const streamId = `ceramic://mock_${Date.now()}`;
+    this.streams.set(streamId, { content, metadata });
+    return { id: streamId };
   }
-  return null;
+
+  async loadStream(streamId: string): Promise<{ content: Record<string, unknown>; update: (newContent: Record<string, unknown>) => Promise<void> }> {
+    const stream = this.streams.get(streamId) || { content: { messages: [] } };
+    return {
+      content: stream.content as Record<string, unknown>,
+      update: async (newContent: Record<string, unknown>) => {
+        this.streams.set(streamId, { ...stream, content: newContent });
+      }
+    };
+  }
 }
 
-/**
- * Message Stream Schema Definition
- * This defines the structure of message streams stored on Ceramic
- */
-export interface MessageStream {
-  messages: Array<{
-    id: string;
-    sender_did: string;
-    content: string;
-    timestamp: string;
-    type: 'text' | 'image' | 'file';
-    metadata?: Record<string, any>;
-  }>;
-  last_updated: string;
-  version: number;
+let ceramicClient: MockCeramicClient | null = null;
+
+export async function getCeramicClient(): Promise<MockCeramicClient> {
+  if (ceramicClient) return ceramicClient;
+  
+  // Load config for future real implementation
+  await loadConfig();
+  ceramicClient = new MockCeramicClient();
+  return ceramicClient;
 }
 
-/**
- * User Profile Schema Definition
- * This defines the structure of user profile streams stored on Ceramic
- */
-export interface UserProfile {
-  username: string;
-  avatar?: string;
-  bio?: string;
-  social_links?: {
-    twitter?: string;
-    github?: string;
-    website?: string;
-  };
-  preferences?: {
-    theme: 'light' | 'dark';
-    notifications: boolean;
-  };
-  last_updated: string;
-  version: number;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function authenticateCeramic(address: string, provider: unknown): Promise<string> {
+  const ceramic = await getCeramicClient();
+  
+  try {
+    // Mock authentication for now - parameters intentionally unused in mock
+    await ceramic.setDIDProvider();
+    return ceramic.did?.id || '';
+  } catch (error) {
+    console.error('Failed to authenticate with Ceramic:', error);
+    throw new Error('Ceramic authentication failed');
+  }
 }
 
-/**
- * Generate a deterministic stream ID for a chat
- * This ensures all participants can find the same stream for a given chat
- */
-export function generateChatStreamId(chatId: string): string {
-  // Use a deterministic approach to generate stream ID from chat ID
-  // This ensures all participants can find the same stream
-  return `chat-${chatId}`;
+export async function createMessageStream(chatId: string): Promise<string> {
+  const ceramic = await getCeramicClient();
+  
+  try {
+    const streamContent = {
+      chatId,
+      messages: [],
+      createdAt: new Date().toISOString()
+    };
+    
+    const stream = await ceramic.createStream(streamContent, {
+      controllers: [ceramic.did?.id],
+      family: `we3chat-messages-${chatId}`
+    });
+    
+    return stream.id;
+  } catch (error) {
+    console.error('Failed to create message stream:', error);
+    throw new Error('Failed to create message stream');
+  }
 }
 
-/**
- * Generate a deterministic stream ID for a user profile
- */
-export function generateProfileStreamId(did: string): string {
-  return `profile-${did}`;
+export interface CeramicMessage {
+  sender_did: string;
+  content: string;
+  timestamp: string;
+  id: string;
+}
+
+export async function addMessageToStream(
+  streamId: string, 
+  message: Omit<CeramicMessage, 'id'>
+): Promise<void> {
+  const ceramic = await getCeramicClient();
+  
+  try {
+    const stream = await ceramic.loadStream(streamId);
+    const currentContent = stream.content as { messages: CeramicMessage[] };
+    
+    const newMessage: CeramicMessage = {
+      ...message,
+      id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    };
+    
+    const updatedContent = {
+      ...currentContent,
+      messages: [...(currentContent.messages || []), newMessage]
+    };
+    
+    await stream.update(updatedContent);
+  } catch (error) {
+    console.error('Failed to add message to stream:', error);
+    throw new Error('Failed to add message to stream');
+  }
+}
+
+export async function getMessagesFromStream(streamId: string): Promise<CeramicMessage[]> {
+  const ceramic = await getCeramicClient();
+  
+  try {
+    const stream = await ceramic.loadStream(streamId);
+    const content = stream.content as { messages: CeramicMessage[] };
+    return content.messages || [];
+  } catch (error) {
+    console.error('Failed to get messages from stream:', error);
+    return [];
+  }
 }

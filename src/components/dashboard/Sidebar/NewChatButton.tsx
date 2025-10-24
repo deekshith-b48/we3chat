@@ -1,156 +1,143 @@
-/**
- * New Chat Button Component
- * 
- * Opens a modal to start a new chat with another user
- */
-
 import React, { useState } from 'react';
-import UserSearch from '../../UserSearch';
-import { getSupabaseClient } from '../../../utils/supabase';
-import { useAuth } from '../../../hooks/supabase/useAuth';
+import { Plus, User, Users, Search } from 'lucide-react';
+import { useChats } from '../../../hooks/supabase/useChats';
 
 interface NewChatButtonProps {
-  onChatCreated: (chatId: string) => void;
+  onChatCreated?: (chatId: string) => void;
 }
 
-export default function NewChatButton({ onChatCreated }: NewChatButtonProps) {
+export function NewChatButton({ onChatCreated }: NewChatButtonProps) {
   const [showModal, setShowModal] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
-  const { user } = useAuth();
+  const [showDirectMessageForm, setShowDirectMessageForm] = useState(false);
+  const [username, setUsername] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  
+  const { createDirectChat } = useChats();
 
-  const handleUserSelect = async (selectedUser: any) => {
-    if (!user) return;
+  const handleCreateDirectMessage = async () => {
+    if (!username.trim()) {
+      setError('Please enter a username');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
 
     try {
-      setIsCreating(true);
-
-      const supabase = getSupabaseClient();
-
-      // Check if a direct chat already exists between these users
-      const { data: existingChats, error: checkError } = await supabase
-        .from('chat_participants')
-        .select(`
-          chat_id,
-          chats!inner(
-            id,
-            type,
-            chat_participants!inner(user_id)
-          )
-        `)
-        .eq('user_id', user.id)
-        .eq('chats.type', 'direct');
-
-      if (checkError) {
-        throw checkError;
-      }
-
-      // Find existing direct chat with the selected user
-      const existingChat = existingChats?.find((chat: any) => 
-        chat.chats.chat_participants.some((p: any) => p.user_id === selectedUser.id)
-      );
-
-      if (existingChat) {
-        // Chat already exists, just open it
-        onChatCreated(existingChat.chat_id);
-        setShowModal(false);
-        return;
-      }
-
-      // Create new chat
-      const { data: newChat, error: chatError } = await supabase
-        .from('chats')
-        .insert({
-          name: `Chat with ${selectedUser.username}`,
-          type: 'direct',
-          last_activity: new Date().toISOString(),
-        })
-        .select()
-        .single();
-
-      if (chatError) {
-        throw chatError;
-      }
-
-      // Add participants
-      const { error: participantsError } = await supabase
-        .from('chat_participants')
-        .insert([
-          {
-            chat_id: newChat.id,
-            user_id: user.id,
-            role: 'member',
-          },
-          {
-            chat_id: newChat.id,
-            user_id: selectedUser.id,
-            role: 'member',
-          },
-        ]);
-
-      if (participantsError) {
-        throw participantsError;
-      }
-
-      // Create notification for the other user
-      await supabase
-        .from('notifications')
-        .insert({
-          user_id: selectedUser.id,
-          message: `${user.email} started a chat with you`,
-          type: 'message',
-        });
-
-      onChatCreated(newChat.id);
+      const chatId = await createDirectChat(username.trim());
       setShowModal(false);
-
-    } catch (error) {
-      console.error('Error creating chat:', error);
-      alert('Failed to create chat. Please try again.');
+      setShowDirectMessageForm(false);
+      setUsername('');
+      if (onChatCreated) {
+        onChatCreated(chatId);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create chat');
     } finally {
-      setIsCreating(false);
+      setLoading(false);
     }
+  };
+
+  const resetModal = () => {
+    setShowModal(false);
+    setShowDirectMessageForm(false);
+    setUsername('');
+    setError('');
   };
 
   return (
     <>
       <button
         onClick={() => setShowModal(true)}
-        className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        title="New Chat"
       >
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-        </svg>
-        <span>New Chat</span>
+        <Plus className="w-5 h-5" />
       </button>
 
-      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Start New Chat</h2>
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <UserSearch
-              onUserSelect={handleUserSelect}
-              onClose={() => setShowModal(false)}
-            />
-
-            {isCreating && (
-              <div className="p-4 border-t border-gray-200">
-                <div className="flex items-center justify-center space-x-2 text-gray-600">
-                  <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                  <span>Creating chat...</span>
+          <div className="bg-white rounded-lg p-6 w-96 max-w-full mx-4">
+            {!showDirectMessageForm ? (
+              <>
+                <h3 className="text-lg font-semibold mb-4">Start New Chat</h3>
+                
+                <div className="space-y-3">
+                  <button 
+                    onClick={() => setShowDirectMessageForm(true)}
+                    className="w-full flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <User className="w-5 h-5 text-gray-600" />
+                    <span>Direct Message</span>
+                  </button>
+                  
+                  <button 
+                    className="w-full flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors opacity-50 cursor-not-allowed"
+                    disabled
+                  >
+                    <Users className="w-5 h-5 text-gray-600" />
+                    <span>Group Chat (Coming Soon)</span>
+                  </button>
                 </div>
-              </div>
+
+                <div className="flex justify-end space-x-2 mt-6">
+                  <button
+                    onClick={resetModal}
+                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className="text-lg font-semibold mb-4">New Direct Message</h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+                      Enter username or email
+                    </label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <input
+                        id="username"
+                        type="text"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleCreateDirectMessage()}
+                        placeholder="username or email@example.com"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        disabled={loading}
+                      />
+                    </div>
+                  </div>
+
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                      <p className="text-sm text-red-600">{error}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-end space-x-2 mt-6">
+                  <button
+                    onClick={() => setShowDirectMessageForm(false)}
+                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    disabled={loading}
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={handleCreateDirectMessage}
+                    disabled={loading || !username.trim()}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {loading ? 'Creating...' : 'Create Chat'}
+                  </button>
+                </div>
+              </>
             )}
           </div>
         </div>

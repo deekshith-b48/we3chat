@@ -1,27 +1,111 @@
 [
   {
+    "anonymous": false,
     "inputs": [
-      { "internalType": "string", "name": "name", "type": "string" },
-      { "internalType": "bytes32", "name": "pubkey", "type": "bytes32" }
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "x25519PublicKey",
+        "type": "bytes32"
+      }
     ],
-    "name": "createAccount",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "name": "AccountCreated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "x25519PublicKey",
+        "type": "bytes32"
+      }
+    ],
+    "name": "EncryptionKeySet",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "friend",
+        "type": "address"
+      }
+    ],
+    "name": "FriendAdded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "from",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "cidHash",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "timestamp",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "cid",
+        "type": "string"
+      }
+    ],
+    "name": "MessageSent",
+    "type": "event"
   },
   {
     "inputs": [
-      { "internalType": "bytes32", "name": "pubkey", "type": "bytes32" }
-    ],
-    "name": "setEncryptionKey",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      { "internalType": "address", "name": "friendAddr", "type": "address" },
-      { "internalType": "string", "name": "name", "type": "string" }
+      {
+        "internalType": "address",
+        "name": "friend_",
+        "type": "address"
+      }
     ],
     "name": "addFriend",
     "outputs": [],
@@ -30,9 +114,123 @@
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "friendAddr", "type": "address" },
-      { "internalType": "bytes32", "name": "cidHash", "type": "bytes32" },
-      { "internalType": "string", "name": "cid", "type": "string" }
+      {
+        "internalType": "string",
+        "name": "name",
+        "type": "string"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "pubkey",
+        "type": "bytes32"
+      }
+    ],
+    "name": "createAccount",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      }
+    ],
+    "name": "getFriends",
+    "outputs": [
+      {
+        "internalType": "address[]",
+        "name": "",
+        "type": "address[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "name": "isFriend",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "friend_",
+        "type": "address"
+      }
+    ],
+    "name": "readMessage",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "sender",
+            "type": "address"
+          },
+          {
+            "internalType": "address",
+            "name": "receiver",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "timestamp",
+            "type": "uint256"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "cidHash",
+            "type": "bytes32"
+          }
+        ],
+        "internalType": "struct ChatApp.Message[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "to",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "cidHash",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "string",
+        "name": "cid",
+        "type": "string"
+      }
     ],
     "name": "sendMessage",
     "outputs": [],
@@ -41,136 +239,53 @@
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "friendAddr", "type": "address" }
-    ],
-    "name": "getMessages",
-    "outputs": [
       {
-        "components": [
-          { "internalType": "address", "name": "sender", "type": "address" },
-          { "internalType": "address", "name": "receiver", "type": "address" },
-          { "internalType": "uint256", "name": "timestamp", "type": "uint256" },
-          { "internalType": "bytes32", "name": "cidHash", "type": "bytes32" }
-        ],
-        "internalType": "struct ChatApp.Message[]",
-        "name": "",
-        "type": "tuple[]"
+        "internalType": "bytes32",
+        "name": "pubkey",
+        "type": "bytes32"
       }
     ],
-    "stateMutability": "view",
+    "name": "setEncryptionKey",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "friendAddr", "type": "address" }
-    ],
-    "name": "readMessage",
-    "outputs": [
       {
-        "components": [
-          { "internalType": "address", "name": "sender", "type": "address" },
-          { "internalType": "address", "name": "receiver", "type": "address" },
-          { "internalType": "uint256", "name": "timestamp", "type": "uint256" },
-          { "internalType": "bytes32", "name": "cidHash", "type": "bytes32" }
-        ],
-        "internalType": "struct ChatApp.Message[]",
+        "internalType": "address",
         "name": "",
-        "type": "tuple[]"
+        "type": "address"
       }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getFriends",
-    "outputs": [
-      {
-        "components": [
-          { "internalType": "address", "name": "friendAddress", "type": "address" },
-          { "internalType": "string", "name": "name", "type": "string" },
-          { "internalType": "uint256", "name": "addedAt", "type": "uint256" }
-        ],
-        "internalType": "struct ChatApp.Friend[]",
-        "name": "",
-        "type": "tuple[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      { "internalType": "address", "name": "user", "type": "address" }
     ],
     "name": "username",
     "outputs": [
-      { "internalType": "string", "name": "", "type": "string" }
+      {
+        "internalType": "string",
+        "name": "",
+        "type": "string"
+      }
     ],
     "stateMutability": "view",
     "type": "function"
   },
   {
     "inputs": [
-      { "internalType": "address", "name": "user", "type": "address" }
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
     ],
-    "name": "getEncryptionKey",
+    "name": "x25519PublicKey",
     "outputs": [
-      { "internalType": "bytes32", "name": "", "type": "bytes32" }
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
     ],
     "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      { "indexed": true, "internalType": "address", "name": "from", "type": "address" },
-      { "indexed": true, "internalType": "address", "name": "to", "type": "address" },
-      { "indexed": true, "internalType": "bytes32", "name": "cidHash", "type": "bytes32" },
-      { "indexed": false, "internalType": "uint256", "name": "timestamp", "type": "uint256" },
-      { "indexed": false, "internalType": "string", "name": "cid", "type": "string" }
-    ],
-    "name": "MessageSent",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      { "indexed": true, "internalType": "address", "name": "user", "type": "address" },
-      { "indexed": false, "internalType": "string", "name": "username", "type": "string" },
-      { "indexed": false, "internalType": "bytes32", "name": "publicKey", "type": "bytes32" }
-    ],
-    "name": "AccountCreated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      { "indexed": true, "internalType": "address", "name": "user1", "type": "address" },
-      { "indexed": true, "internalType": "address", "name": "user2", "type": "address" }
-    ],
-    "name": "FriendAdded",
-    "type": "event"
-  },
-  {
-    "inputs": [
-      { "internalType": "address", "name": "user1", "type": "address" },
-      { "internalType": "address", "name": "user2", "type": "address" }
-    ],
-    "name": "areFriends",
-    "outputs": [
-      { "internalType": "bool", "name": "", "type": "bool" }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      { "internalType": "string", "name": "newName", "type": "string" }
-    ],
-    "name": "updateUsername",
-    "outputs": [],
-    "stateMutability": "nonpayable",
     "type": "function"
   }
 ]

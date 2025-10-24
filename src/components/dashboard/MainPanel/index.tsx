@@ -1,22 +1,22 @@
-/**
- * Main Panel Component
- * 
- * Container for chat interface - shows either empty state or active chat
- */
-
 import React from 'react';
-import EmptyChatState from './EmptyChatState';
-import ActiveChat from './ActiveChat';
+import { EmptyChatState } from './EmptyChatState';
+import { ActiveChat } from './ActiveChat';
 
 interface MainPanelProps {
-  activeChatId?: string;
-  activeChatName?: string;
+  activeChatId: string | null;
+  chatName?: string;
 }
 
-export default function MainPanel({ activeChatId, activeChatName }: MainPanelProps) {
-  if (!activeChatId || !activeChatName) {
+export function MainPanel({ activeChatId, chatName }: MainPanelProps) {
+  if (!activeChatId) {
     return <EmptyChatState />;
   }
 
-  return <ActiveChat chatId={activeChatId} chatName={activeChatName} />;
+  return (
+    <ActiveChat 
+      chatId={activeChatId} 
+      chatName={chatName || 'Unknown Chat'} 
+      isOnline={false}
+    />
+  );
 }
