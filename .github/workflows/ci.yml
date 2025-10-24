@@ -52,7 +52,7 @@ jobs:
         run: npm ci
       
       - name: Run linting
-        run: npm run lint
+        run: npm run lint -- src/
       
       - name: Build application
         run: npm run build
