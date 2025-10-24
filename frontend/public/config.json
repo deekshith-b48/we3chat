@@ -1,0 +1,11 @@
+{
+  "supabase": {
+    "url": "https://your-project.supabase.co",
+    "anonKey": "your-anon-key"
+  },
+  "ceramic": {
+    "nodeUrl": "https://ceramic-clay.3boxlabs.com",
+    "network": "testnet-clay"
+  },
+  "environment": "development"
+}
