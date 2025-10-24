@@ -167,7 +167,7 @@ export class MessageEncryption {
     };
     
     // Import ipfsService dynamically to avoid circular dependencies
-    const { ipfsService } = await import('./ipfsService');
+    const { ipfsService } = await import('./ipfs');
     return await ipfsService.uploadMessage(JSON.stringify(messageData), metadata);
   }
 
@@ -175,7 +175,7 @@ export class MessageEncryption {
     cid: string,
     senderPublicKey: Uint8Array
   ): Promise<{ content: string; metadata: MessageMetadata }> {
-    const { ipfsService } = await import('./ipfsService');
+    const { ipfsService } = await import('./ipfs');
     const messageData = await ipfsService.downloadMessage(cid);
     
     const content = await this.decryptMessage(messageData.encrypted, senderPublicKey);
@@ -202,7 +202,7 @@ export class MessageEncryption {
       }
     };
     
-    const { ipfsService } = await import('./ipfsService');
+    const { ipfsService } = await import('./ipfs');
     return await ipfsService.uploadFile(file, fileData);
   }
 
@@ -210,7 +210,7 @@ export class MessageEncryption {
     cid: string,
     senderPublicKey: Uint8Array
   ): Promise<{ file: File; metadata: MessageMetadata }> {
-    const { ipfsService } = await import('./ipfsService');
+    const { ipfsService } = await import('./ipfs');
     const fileData = await ipfsService.downloadFile(cid);
     
     const fileContent = await this.decryptFile(fileData.encrypted, senderPublicKey);
