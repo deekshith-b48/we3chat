@@ -2,9 +2,15 @@ import React, { useState } from 'react';
 import { Bell, Settings, LogOut, Wifi, WifiOff, User } from 'lucide-react';
 import Link from 'next/link';
 
+interface UserProfile {
+  username: string;
+  bio: string;
+  avatarCid?: string;
+}
+
 interface TopNavBarProps {
   account?: string | null;
-  userProfile?: any;
+  userProfile?: UserProfile;
   onDisconnect?: () => void;
 }
 

@@ -11,12 +11,10 @@ export function Dashboard() {
     account,
     isRegistered,
     userProfile,
-    friends,
     loadUserProfile,
     loadFriends,
     loadConversations,
     loadGroupChats,
-    connectWallet,
     disconnectWallet
   } = useWeb3ChatStore();
 

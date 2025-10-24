@@ -1,6 +1,7 @@
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { useWeb3ChatStore } from '@/store/web3Store';
 import { useState } from 'react';
+import Image from 'next/image';
 
 export function WalletConnection() {
   const { address, isConnected } = useAccount();
@@ -9,7 +10,7 @@ export function WalletConnection() {
   const { connectWallet, disconnectWallet, userProfile, isRegistered } = useWeb3ChatStore();
   const [isConnecting, setIsConnecting] = useState(false);
 
-  const handleConnect = async (connector: any) => {
+  const handleConnect = async (connector: { id: string; name: string }) => {
     try {
       setIsConnecting(true);
       await connect({ connector });
@@ -77,9 +78,11 @@ export function WalletConnection() {
           >
             <div className="w-8 h-8 flex items-center justify-center">
               {connector.icon && (
-                <img
+                <Image
                   src={connector.icon}
                   alt={connector.name}
+                  width={24}
+                  height={24}
                   className="w-6 h-6"
                 />
               )}

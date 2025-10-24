@@ -1,10 +1,18 @@
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useWeb3ChatStore } from '@/store/web3Store';
 import { web3Api } from '@/lib/web3Api';
 import { messageEncryption } from '@/lib/messageEncryption';
 
+interface Message {
+  content: string;
+  timestamp: number;
+  sender: string;
+  id: string;
+}
+
 interface MessageBubbleProps {
-  message: any;
+  message: Message;
   isOwn: boolean;
 }
 
@@ -29,7 +37,6 @@ function MessageBubble({ message, isOwn }: MessageBubbleProps) {
 
 export function ChatInterface() {
   const {
-    conversations,
     messages,
     userProfile,
     friends,
@@ -63,7 +70,7 @@ export function ChatInterface() {
         Buffer.from(recipientProfile.x25519PublicKey.slice(2), 'hex')
       );
       
-      const encryptedCid = await messageEncryption.encryptAndUploadMessage(
+      await messageEncryption.encryptAndUploadMessage(
         messageInput,
         recipientPublicKey,
         {
@@ -116,9 +123,11 @@ export function ChatInterface() {
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
                     {friend.avatarCid ? (
-                      <img
+                      <Image
                         src={`https://ipfs.io/ipfs/${friend.avatarCid}`}
                         alt={friend.name}
+                        width={40}
+                        height={40}
                         className="w-10 h-10 rounded-full object-cover"
                       />
                     ) : (

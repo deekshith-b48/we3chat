@@ -3,7 +3,7 @@ import { useWeb3ChatStore } from '@/store/web3Store';
 import { messageEncryption } from '@/lib/messageEncryption';
 
 export function UserRegistration() {
-  const { registerUser, account, isLoading } = useWeb3ChatStore();
+  const { registerUser, isLoading } = useWeb3ChatStore();
   const [formData, setFormData] = useState({
     username: '',
     bio: '',
