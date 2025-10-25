@@ -25,30 +25,57 @@ export function setupSocketHandlers(io: Server) {
   // Authentication middleware for socket connections
   io.use(async (socket: AuthenticatedSocket, next) => {
     try {
+      // Support both JWT token and wallet address authentication
       const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.split(' ')[1];
+      const userAddress = socket.handshake.auth.userAddress || socket.handshake.auth.address;
       
-      if (!token) {
-        return next(new Error('Authentication required'));
+      let user = null;
+
+      // Try JWT authentication first
+      if (token) {
+        try {
+          const decoded = jwt.verify(token, JWT_SECRET) as any;
+          
+          // Check if session exists and get user
+          const session = await Session.findOne({
+            token: token,
+            userId: decoded.userId,
+            expiresAt: { $gt: new Date() }
+          }).populate('userId');
+
+          if (session) {
+            user = await User.findById(session.userId);
+          }
+        } catch (jwtError) {
+          console.log('JWT verification failed, trying wallet address auth');
+        }
       }
 
-      // Verify JWT
-      const decoded = jwt.verify(token, JWT_SECRET) as any;
-      
-      // Check if session exists and get user
-      const session = await Session.findOne({
-        token: token,
-        userId: decoded.userId,
-        expiresAt: { $gt: new Date() }
-      }).populate('userId');
-
-      if (!session) {
-        return next(new Error('Invalid or expired token'));
+      // Fall back to wallet address authentication
+      if (!user && userAddress) {
+        // Normalize address to lowercase
+        const normalizedAddress = userAddress.toLowerCase();
+        
+        // Find or create user by wallet address
+        user = await User.findOne({ address: normalizedAddress });
+        
+        if (!user) {
+          // Auto-create user for wallet-based auth
+          user = await User.create({
+            address: normalizedAddress,
+            isRegistered: false,
+            lastSeen: new Date()
+          });
+          console.log(`✨ Auto-created user for address ${normalizedAddress}`);
+        }
       }
 
-      const user = await User.findById(session.userId);
       if (!user) {
-        return next(new Error('User not found'));
+        return next(new Error('Authentication required: provide either token or userAddress'));
       }
+
+      // Update last seen
+      await User.findByIdAndUpdate(user._id, { lastSeen: new Date() });
 
       // Add user info to socket
       socket.user = {

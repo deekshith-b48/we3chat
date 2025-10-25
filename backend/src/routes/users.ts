@@ -167,6 +167,51 @@ router.put('/settings', authenticateToken, async (req: AuthenticatedRequest, res
   }
 });
 
+// GET /api/users/discover - Discover all registered users
+router.get('/discover', async (req, res) => {
+  try {
+    const { limit = 50, page = 1 } = req.query;
+    
+    const skip = (Number(page) - 1) * Number(limit);
+    const limitNum = Math.min(Number(limit), 100);
+
+    // Get registered users only
+    const users = await User.find({ isRegistered: true })
+      .select('_id address username bio avatar isRegistered lastSeen reputation createdAt')
+      .sort({ createdAt: -1 })
+      .limit(limitNum)
+      .skip(skip);
+
+    const total = await User.countDocuments({ isRegistered: true });
+
+    const formattedUsers = users.map(user => ({
+      id: (user._id as any).toString(),
+      address: user.address,
+      username: user.username,
+      bio: user.bio,
+      avatar: user.avatar,
+      isRegistered: user.isRegistered,
+      isActive: user.isRegistered,
+      lastSeen: user.lastSeen,
+      reputation: user.reputation || 0,
+      createdAt: user.createdAt,
+    }));
+
+    res.json({ 
+      users: formattedUsers,
+      pagination: {
+        page: Number(page),
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum)
+      }
+    });
+  } catch (error) {
+    console.error('Discover users error:', error);
+    res.status(500).json({ error: 'Failed to discover users' });
+  }
+});
+
 // GET /api/users/search - Search users
 router.get('/search', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {

@@ -503,32 +503,36 @@ class Web3Api {
   // Get all registered users (for user discovery)
   async getAllUsers(): Promise<Array<UserProfile & { address: string }>> {
     try {
-      // Note: This is a workaround since the smart contract doesn't have a getAllUsers function
-      // In production, you would either:
-      // 1. Add this function to the smart contract
-      // 2. Use an indexer service like The Graph
-      // 3. Maintain a separate database
+      // Call backend API for user discovery
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/api/users/discover`);
       
-      // For now, we'll return an empty array and you should implement proper indexing
-      console.warn('getAllUsers: This requires either contract modification or indexing service');
-      return [];
+      if (!response.ok) {
+        throw new Error('Failed to fetch users');
+      }
+      
+      const data = await response.json();
+      return data.users || [];
     } catch (error) {
       console.error('Failed to get all users:', error);
-      throw error;
+      return []; // Return empty array instead of throwing to prevent UI crashes
     }
   }
 
   // Search users by username or address
   async searchUsers(query: string): Promise<Array<UserProfile & { address: string }>> {
     try {
-      const allUsers = await this.getAllUsers();
-      return allUsers.filter(user => 
-        user.username.toLowerCase().includes(query.toLowerCase()) ||
-        user.address.toLowerCase().includes(query.toLowerCase())
-      );
+      // Use backend search API for better performance
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/api/users/search?q=${encodeURIComponent(query)}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to search users');
+      }
+      
+      const data = await response.json();
+      return data.users || [];
     } catch (error) {
       console.error('Failed to search users:', error);
-      throw error;
+      return []; // Return empty array instead of throwing
     }
   }
 
