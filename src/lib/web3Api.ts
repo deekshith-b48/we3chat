@@ -499,6 +499,147 @@ class Web3Api {
       isActive: data.isActive
     };
   }
+
+  // Get all registered users (for user discovery)
+  async getAllUsers(): Promise<Array<UserProfile & { address: string }>> {
+    try {
+      // Note: This is a workaround since the smart contract doesn't have a getAllUsers function
+      // In production, you would either:
+      // 1. Add this function to the smart contract
+      // 2. Use an indexer service like The Graph
+      // 3. Maintain a separate database
+      
+      // For now, we'll return an empty array and you should implement proper indexing
+      console.warn('getAllUsers: This requires either contract modification or indexing service');
+      return [];
+    } catch (error) {
+      console.error('Failed to get all users:', error);
+      throw error;
+    }
+  }
+
+  // Search users by username or address
+  async searchUsers(query: string): Promise<Array<UserProfile & { address: string }>> {
+    try {
+      const allUsers = await this.getAllUsers();
+      return allUsers.filter(user => 
+        user.username.toLowerCase().includes(query.toLowerCase()) ||
+        user.address.toLowerCase().includes(query.toLowerCase())
+      );
+    } catch (error) {
+      console.error('Failed to search users:', error);
+      throw error;
+    }
+  }
+
+  // Reject friend request
+  async rejectFriendRequest(fromAddress: string): Promise<void> {
+    try {
+      const walletClient = this.getWalletClient();
+      const account = this.getAccount();
+
+      // Note: The current smart contract doesn't have a reject function
+      // You would need to add this to the smart contract
+      // For now, we'll simulate it by not accepting
+      console.warn('rejectFriendRequest: This requires smart contract modification');
+      
+      // In a real implementation, you would call:
+      // await walletClient.writeContract({
+      //   address: this.contractAddress,
+      //   abi: ChatAppABI,
+      //   functionName: 'rejectFriendRequest',
+      //   args: [fromAddress],
+      //   account
+      // });
+    } catch (error) {
+      console.error('Failed to reject friend request:', error);
+      throw error;
+    }
+  }
+
+  // Update group name
+  async updateGroupName(groupId: number, newName: string): Promise<void> {
+    try {
+      const walletClient = this.getWalletClient();
+      const account = this.getAccount();
+
+      // Note: Add this function to your smart contract
+      console.warn('updateGroupName: This requires smart contract modification');
+    } catch (error) {
+      console.error('Failed to update group name:', error);
+      throw error;
+    }
+  }
+
+  // Update group description
+  async updateGroupDescription(groupId: number, newDescription: string): Promise<void> {
+    try {
+      const walletClient = this.getWalletClient();
+      const account = this.getAccount();
+
+      // Note: Add this function to your smart contract
+      console.warn('updateGroupDescription: This requires smart contract modification');
+    } catch (error) {
+      console.error('Failed to update group description:', error);
+      throw error;
+    }
+  }
+
+  // Update group avatar
+  async updateGroupAvatar(groupId: number, avatarCid: string): Promise<void> {
+    try {
+      const walletClient = this.getWalletClient();
+      const account = this.getAccount();
+
+      // Note: Add this function to your smart contract
+      console.warn('updateGroupAvatar: This requires smart contract modification');
+    } catch (error) {
+      console.error('Failed to update group avatar:', error);
+      throw error;
+    }
+  }
+
+  // Add member to group
+  async addGroupMember(groupId: number, memberAddress: string): Promise<void> {
+    try {
+      const walletClient = this.getWalletClient();
+      const account = this.getAccount();
+
+      // Note: Add this function to your smart contract
+      console.warn('addGroupMember: This requires smart contract modification');
+    } catch (error) {
+      console.error('Failed to add group member:', error);
+      throw error;
+    }
+  }
+
+  // Remove member from group
+  async removeGroupMember(groupId: number, memberAddress: string): Promise<void> {
+    try {
+      const walletClient = this.getWalletClient();
+      const account = this.getAccount();
+
+      // Note: Add this function to your smart contract
+      console.warn('removeGroupMember: This requires smart contract modification');
+    } catch (error) {
+      console.error('Failed to remove group member:', error);
+      throw error;
+    }
+  }
+
+  // Delete group
+  async deleteGroup(groupId: number): Promise<void> {
+    try {
+      const walletClient = this.getWalletClient();
+      const account = this.getAccount();
+
+      // Note: Add this function to your smart contract
+      console.warn('deleteGroup: This requires smart contract modification');
+    } catch (error) {
+      console.error('Failed to delete group:', error);
+      throw error;
+    }
+  }
 }
 
 export const web3Api = new Web3Api();
