@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useWeb3ChatStore } from '@/store/web3Store';
 import { WalletConnection } from './WalletConnection';
 import { UserRegistration } from './UserRegistration';
-import { ChatInterface } from './ChatInterface';
+import { AdvancedChatInterface } from './AdvancedChatInterface';
 import { TopNavBar } from './dashboard/TopNavBar';
 
 export function Dashboard() {
@@ -11,12 +11,20 @@ export function Dashboard() {
     account,
     isRegistered,
     userProfile,
+    conversations,
+    groupChats,
     loadUserProfile,
     loadFriends,
     loadConversations,
     loadGroupChats,
     disconnectWallet
   } = useWeb3ChatStore();
+
+  const [selectedChat, setSelectedChat] = useState<{
+    id: string;
+    name: string;
+    type: 'direct' | 'group';
+  } | null>(null);
 
   useEffect(() => {
     if (isConnected && account) {
@@ -71,7 +79,73 @@ export function Dashboard() {
           userProfile={userProfile}
           onDisconnect={disconnectWallet}
         />
-        <ChatInterface />
+        
+        {selectedChat ? (
+          <AdvancedChatInterface
+            chatId={selectedChat.id}
+            chatName={selectedChat.name}
+            chatType={selectedChat.type}
+          />
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Welcome to We3Chat</h2>
+              <p className="text-gray-600 mb-6">Select a conversation to start chatting</p>
+              
+              {/* Direct Messages */}
+              {conversations.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Direct Messages</h3>
+                  <div className="space-y-2">
+                    {conversations.map((conv) => (
+                      <button
+                        key={conv.id}
+                        onClick={() => setSelectedChat({
+                          id: conv.id,
+                          name: conv.name,
+                          type: 'direct'
+                        })}
+                        className="w-full p-3 text-left bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                      >
+                        <div className="font-medium">{conv.name}</div>
+                        <div className="text-sm text-gray-500">{conv.lastMessage}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Group Chats */}
+              {groupChats.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Group Chats</h3>
+                  <div className="space-y-2">
+                    {groupChats.map((group) => (
+                      <button
+                        key={group.id}
+                        onClick={() => setSelectedChat({
+                          id: group.id.toString(),
+                          name: group.name,
+                          type: 'group'
+                        })}
+                        className="w-full p-3 text-left bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow"
+                      >
+                        <div className="font-medium">{group.name}</div>
+                        <div className="text-sm text-gray-500">{group.members.length} members</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {conversations.length === 0 && groupChats.length === 0 && (
+                <div className="text-gray-500">
+                  <p>No conversations yet. Start by adding friends or creating a group!</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

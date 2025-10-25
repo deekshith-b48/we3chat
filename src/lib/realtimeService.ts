@@ -1,5 +1,6 @@
 import { io, Socket } from 'socket.io-client';
-import { createPublicClient, watchContractEvent, http } from 'viem';
+import { createPublicClient, http } from 'viem';
+import { watchContractEvent } from 'viem/actions';
 import { polygonAmoy } from 'viem/chains';
 import { ChatAppABI } from './abi/ChatApp.json';
 
