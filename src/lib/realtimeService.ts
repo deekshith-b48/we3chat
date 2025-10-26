@@ -213,28 +213,46 @@ class RealtimeService {
     }
   }
 
-  // Socket methods
-  sendMessage(chatId: string, message: any): void {
+  // Socket methods - aligned with backend event names
+  sendMessage(conversationId: string, message: any): void {
     if (this.socket) {
-      this.socket.emit('send_message', { chatId, message });
+      // Backend expects: { conversationId, content, type, replyToId, tempId }
+      this.socket.emit('send_message', {
+        conversationId,
+        content: message.content,
+        type: message.type || 'text',
+        replyToId: message.replyTo,
+        tempId: message.tempId
+      });
     }
   }
 
   sendGroupMessage(groupId: number, message: any): void {
+    // For group messages, use the same send_message event with conversationId
     if (this.socket) {
-      this.socket.emit('send_group_message', { groupId, message });
+      this.socket.emit('send_message', {
+        conversationId: `group-${groupId}`,
+        content: message.content,
+        type: message.type || 'text',
+        replyToId: message.replyTo,
+        tempId: message.tempId
+      });
     }
   }
 
-  sendTyping(chatId: string, isTyping: boolean): void {
+  sendTyping(conversationId: string, isTyping: boolean): void {
     if (this.socket) {
-      this.socket.emit('typing', { chatId, isTyping });
+      if (isTyping) {
+        this.socket.emit('typing_start', { conversationId });
+      } else {
+        this.socket.emit('typing_stop', { conversationId });
+      }
     }
   }
 
   updateMessageStatus(messageId: string, status: 'sent' | 'delivered' | 'read'): void {
     if (this.socket) {
-      this.socket.emit('message_status_update', {
+      this.socket.emit('update_message_status', {
         messageId,
         status,
         timestamp: Date.now()
@@ -242,32 +260,46 @@ class RealtimeService {
     }
   }
 
-  joinChat(chatId: string): void {
+  joinChat(conversationId: string): void {
     if (this.socket) {
-      this.socket.emit('join_chat', chatId);
+      this.socket.emit('join_conversation', { conversationId });
     }
   }
 
-  leaveChat(chatId: string): void {
+  leaveChat(conversationId: string): void {
     if (this.socket) {
-      this.socket.emit('leave_chat', chatId);
-    }
-  }
-
-  joinGroup(groupId: number): void {
-    if (this.socket) {
-      this.socket.emit('join_group', groupId);
-    }
-  }
-
-  leaveGroup(groupId: number): void {
-    if (this.socket) {
-      this.socket.emit('leave_group', groupId);
+      this.socket.emit('leave_conversation', { conversationId });
     }
   }
 
   getConnectionStatus(): boolean {
     return this.isConnected && this.socket?.connected === true;
+  }
+
+  // Convenience method to get friend requests
+  async getFriendRequests(): Promise<any[]> {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/api/users/friend-requests`);
+      if (!response.ok) throw new Error('Failed to get friend requests');
+      const data = await response.json();
+      return data.requests || [];
+    } catch (error) {
+      console.error('Failed to get friend requests:', error);
+      return [];
+    }
+  }
+
+  // Convenience method to get friends
+  async getFriends(): Promise<any[]> {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000'}/api/users/friends`);
+      if (!response.ok) throw new Error('Failed to get friends');
+      const data = await response.json();
+      return data.friends || [];
+    } catch (error) {
+      console.error('Failed to get friends:', error);
+      return [];
+    }
   }
 }
 

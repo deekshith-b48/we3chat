@@ -253,6 +253,45 @@ router.get('/search', authenticateToken, async (req: AuthenticatedRequest, res) 
   }
 });
 
+// GET /api/users/friend-requests - Get user's pending friend requests
+router.get('/friend-requests', authenticateToken, async (req: AuthenticatedRequest, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ error: 'Not authenticated' });
+    }
+
+    // Get pending friend requests where user is the addressee
+    const requests = await Friendship.find({
+      addresseeId: req.user.id,
+      status: 'pending'
+    })
+    .populate('requesterId', '_id address username bio avatar isRegistered lastSeen createdAt')
+    .sort({ createdAt: -1 });
+
+    const formattedRequests = requests.map((friendship: any) => ({
+      id: (friendship._id as any).toString(),
+      from: friendship.requesterId.address,
+      to: (friendship.addresseeId as any).toString(), 
+      timestamp: friendship.createdAt.getTime() / 1000,
+      isActive: friendship.status === 'pending',
+      requester: {
+        id: (friendship.requesterId._id as any).toString(),
+        address: friendship.requesterId.address,
+        username: friendship.requesterId.username,
+        bio: friendship.requesterId.bio,
+        avatar: friendship.requesterId.avatar,
+        isRegistered: friendship.requesterId.isRegistered,
+        lastSeen: friendship.requesterId.lastSeen,
+      }
+    }));
+
+    res.json({ requests: formattedRequests });
+  } catch (error) {
+    console.error('Get friend requests error:', error);
+    res.status(500).json({ error: 'Failed to get friend requests' });
+  }
+});
+
 // GET /api/users/friends - Get user's friends
 router.get('/friends', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {
